@@ -14,6 +14,7 @@ import { ImportCsvModal } from '@/containers/ImportCsvModal'
 import { ImportLighterpackModal } from '@/containers/ImportLighterpackModal'
 import { InventoryTable } from '@/containers/Inventory/InventoryTable'
 import { ItemForm } from '@/containers/ItemForm'
+import { ImageAnalyzer } from '@/components/ImageAnalyzer'
 import { downloadInventory } from '@/lib/download'
 import { useInventory } from '@/queries/item'
 
@@ -23,6 +24,7 @@ export const InventoryPage = () => {
   const [openReorder, setOpenReorder] = useState(false)
   const [openLighterpackImport, setOpenLighterpackImport] = useState(false)
   const [openCsvmport, setOpenCsvImport] = useState(false)
+  const [openImageAnalyzer, setOpenImageAnalyzer] = useState(false)
   const [filter, setFilter] = useState('')
 
   return (
@@ -53,6 +55,9 @@ export const InventoryPage = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => setOpenImageAnalyzer(true)}>
+                Analyze Image Inventory
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setOpenLighterpackImport(true)}>
                 Import from LighterPack
               </DropdownMenuItem>
@@ -78,7 +83,12 @@ export const InventoryPage = () => {
         open={openReorder}
         onOpenChange={setOpenReorder}
       />
+      <ImageAnalyzer 
+        open={openImageAnalyzer}
+        onOpenChange={setOpenImageAnalyzer}
+      />
       <InventoryTable searchFilter={filter} isLoading={isLoading} />
     </div>
   )
 }
+
