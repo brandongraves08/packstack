@@ -25,135 +25,159 @@ import { User } from '@/types/user'
 
 import { http } from './base'
 
+// Define the base API URL for backend requests
+export const BASE_API_URL =
+  process.env.NODE_ENV === 'production'
+    ? process.env.REACT_APP_API_URL || window.location.origin
+    : 'http://localhost:5001'
+
 /**
  * User endpoints
  */
-export const getUser = () => http.get<User>('/user')
+export const getUser = () => http.get<User>(`${BASE_API_URL}/user`)
 
 export const getProfile = (username: string) =>
-  http.get<User>(`/user/profile/${username}`)
+  http.get<User>(`${BASE_API_URL}/user/profile/${username}`)
 
 export const uploadUserAvatar = (data: UploadAvatar) => {
   const formData = new FormData()
   formData.append('file', data.file)
 
-  return http.post<User>('/user/avatar', formData, {
+  return http.post<User>(`${BASE_API_URL}/user/avatar`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
   })
 }
 
-export const updateUser = (data: UpdateUser) => http.put<User>('/user', data)
+export const updateUser = (data: UpdateUser) =>
+  http.put<User>(`${BASE_API_URL}/user`, data)
 
 export const userLogin = (data: LoginRequest) =>
-  http.post<AuthResponse>('/user/login', data)
+  http.post<AuthResponse>(`${BASE_API_URL}/user/login`, data)
 
 export const userRegister = (data: RegisterRequest) =>
-  http.post<AuthResponse>('/user', data)
+  http.post<AuthResponse>(`${BASE_API_URL}/user`, data)
 
 export const requestPasswordReset = (email: string) =>
-  http.post('/user/request-password-reset', { email })
+  http.post(`${BASE_API_URL}/user/request-password-reset`, { email })
 
 export const resetPassword = (data: PasswordReset) =>
-  http.post('/user/reset-password', data)
+  http.post(`${BASE_API_URL}/user/reset-password`, data)
 
 /**
  * Trip endpoints
  */
 
 export const getTrip = (tripId?: string | number) =>
-  http.get<Trip>(`/trip/${tripId}`)
+  http.get<Trip>(`${BASE_API_URL}/trip/${tripId}`)
 
-export const createTrip = (data: CreateTrip) => http.post<Trip>('/trip', data)
+export const createTrip = (data: CreateTrip) =>
+  http.post<Trip>(`${BASE_API_URL}/trip`, data)
 
-export const editTrip = (data: EditTrip) => http.put<Trip>('/trip', data)
+export const editTrip = (data: EditTrip) =>
+  http.put<Trip>(`${BASE_API_URL}/trip`, data)
 
 export const cloneTrip = (tripId: number) =>
-  http.post<Trip>(`/trip/${tripId}/clone`)
+  http.post<Trip>(`${BASE_API_URL}/trip/${tripId}/clone`)
 
 export const deleteTrip = (tripId: number) =>
-  http.delete<boolean>(`/trip/${tripId}`)
+  http.delete<boolean>(`${BASE_API_URL}/trip/${tripId}`)
 
 /**
  * Pack endpoints
  */
 
-export const getPack = (id?: string | number) => http.get<Pack>(`/pack/${id}`)
+export const getPack = (id?: string | number) =>
+  http.get<Pack>(`${BASE_API_URL}/pack/${id}`)
 
 export const getTripPacks = (tripId?: string | number) =>
-  http.get<Pack[]>(`/pack/trip/${tripId}`)
+  http.get<Pack[]>(`${BASE_API_URL}/pack/trip/${tripId}`)
 
-export const createPack = (data: PackPayload) => http.post<Pack>('/pack', data)
+export const createPack = (data: PackPayload) =>
+  http.post<Pack>(`${BASE_API_URL}/pack`, data)
 
 export const updatePack = (packId: number, data: PackPayload) =>
-  http.put(`/pack/${packId}`, data)
+  http.put(`${BASE_API_URL}/pack/${packId}`, data)
 
-export const deletePack = (packId: number) => http.delete(`/pack/${packId}`)
+export const deletePack = (packId: number) =>
+  http.delete(`${BASE_API_URL}/pack/${packId}`)
 
 export const generatePack = (packId: number) =>
-  http.post<Trip>(`/pack/${packId}/generate`)
+  http.post<Trip>(`${BASE_API_URL}/pack/${packId}/generate`)
 
 export const getUnassignedPacks = () =>
-  http.get<Pack[]>('/pack/legacy/unassigned')
+  http.get<Pack[]>(`${BASE_API_URL}/pack/legacy/unassigned`)
 
 /**
  * Category endpoints
  */
 
-export const getCategories = () => http.get<Category[]>('/category')
+export const getCategories = () =>
+  http.get<Category[]>(`${BASE_API_URL}/category`)
 
 /**
  * Brand endpoints
  */
 
-export const getBrands = () => http.get<Brand[]>('/resources/brands')
+export const getBrands = () =>
+  http.get<Brand[]>(`${BASE_API_URL}/resources/brands`)
 
 export const searchBrands = (query: string) =>
-  http.get<Brand[]>(`/resources/brand/search/${query}`)
+  http.get<Brand[]>(`${BASE_API_URL}/resources/brand/search/${query}`)
 
 /**
  * Product endpoints
  */
 
 export const getProducts = (brandId?: number) =>
-  http.get<BrandProducts>(`/resources/brand/${brandId}`)
+  http.get<BrandProducts>(`${BASE_API_URL}/resources/brand/${brandId}`)
 
 export const getProductDetails = (data: {
   brandId?: number
   productId?: number
-}) => http.post<ProductDetails>(`/resources/product-details`, data)
+}) =>
+  http.post<ProductDetails>(`${BASE_API_URL}/resources/product-details`, data)
 
 export const getProductVariants = (product_id?: number) =>
-  http.get<ProductVariant[]>(`resources/product/variants/${product_id}`)
+  http.get<ProductVariant[]>(
+    `${BASE_API_URL}/resources/product/variants/${product_id}`
+  )
 
 /**
  * Item endpoints
  */
 
-export const getInventory = () => http.get<Item[]>('/items')
+export const getInventory = () => http.get<Item[]>(`${BASE_API_URL}/items`)
 
-export const createItem = (data: CreateItem) => http.post<Item>('/item', data)
+export const createItem = (data: CreateItem) =>
+  http.post<Item>(`${BASE_API_URL}/item`, data)
 
-export const deleteItem = (itemId: number) => http.delete(`/item/${itemId}`)
+export const deleteItem = (itemId: number) =>
+  http.delete(`${BASE_API_URL}/item/${itemId}`)
 
-export const updateItem = (data: EditItem) => http.put<Item>('/item', data)
+export const updateItem = (data: EditItem) =>
+  http.put<Item>(`${BASE_API_URL}/item`, data)
 
 export const updateItemSortOrder = (data: UpdateItemSortOrder) =>
-  http.put('/item/sort', data)
+  http.put(`${BASE_API_URL}/item/sort`, data)
 
 export const updateCategorySortOrder = (data: UpdateItemSortOrder) =>
-  http.put('/item/category/sort', data)
+  http.put(`${BASE_API_URL}/item/category/sort`, data)
 
 export const importInventory = (data: UploadInventory) => {
   const formData = new FormData()
   formData.append('file', data.file)
 
-  return http.post<ImportInventoryResponse>('/item/import/csv', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  })
+  return http.post<ImportInventoryResponse>(
+    `${BASE_API_URL}/item/import/csv`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  )
 }
 
 export const importLighterpack = (data: UploadInventory) => {
@@ -161,7 +185,7 @@ export const importLighterpack = (data: UploadInventory) => {
   formData.append('file', data.file)
 
   return http.post<ImportInventoryResponse>(
-    '/item/import/lighterpack',
+    `${BASE_API_URL}/item/import/lighterpack`,
     formData,
     {
       headers: {
@@ -176,7 +200,7 @@ export const importLighterpack = (data: UploadInventory) => {
  */
 export const searchItems = (query: string) =>
   http.get<Array<{ id: number; name: string; brand: string }>>(
-    `/item/search?query=${encodeURIComponent(query)}`
+    `${BASE_API_URL}/item/search?query=${encodeURIComponent(query)}`
   )
 
 /**
@@ -193,7 +217,7 @@ export const getWeatherForecast = (location: string, season: string) =>
       alerts: string[]
     }
   }>(
-    `/weather-forecast?location=${encodeURIComponent(
+    `${BASE_API_URL}/weather-forecast?location=${encodeURIComponent(
       location
     )}&season=${encodeURIComponent(season)}`
   )

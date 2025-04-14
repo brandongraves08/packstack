@@ -1,0 +1,24 @@
+version: 1.0
+runtime: python3
+build:
+  commands:
+    pre-build:
+      - pip install --upgrade pip
+      - pip install -r server/requirements.txt
+      - curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && apt-get install -y nodejs
+      - npm install
+    build:
+      - npm run build
+run:
+  runtime-version: 3.9
+  command: cd server && python app.py
+  network:
+    port: 5001
+    env: PORT
+  env:
+    - name: FLASK_ENV
+      value: "production"
+    - name: OPENAI_API_KEY
+      value: "${OPENAI_API_KEY}"
+    - name: REACT_APP_API_URL
+      value: "https://${APP_RUNNER_SERVICE_NAME}.${APP_RUNNER_SERVICE_ID}.${AWS_REGION}.awsapprunner.com"
