@@ -170,3 +170,30 @@ export const importLighterpack = (data: UploadInventory) => {
     }
   )
 }
+
+/**
+ * Search endpoints
+ */
+export const searchItems = (query: string) =>
+  http.get<Array<{ id: number; name: string; brand: string }>>(
+    `/item/search?query=${encodeURIComponent(query)}`
+  )
+
+/**
+ * Weather endpoints
+ */
+export const getWeatherForecast = (location: string, season: string) =>
+  http.get<{
+    location: string
+    season: string
+    forecast: {
+      avg_temp: string
+      precipitation: string
+      conditions: string[]
+      alerts: string[]
+    }
+  }>(
+    `/weather-forecast?location=${encodeURIComponent(
+      location
+    )}&season=${encodeURIComponent(season)}`
+  )

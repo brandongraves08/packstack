@@ -28,6 +28,14 @@ export type User = {
   personal_url: string | null
   avatar: AvatarImage | null
   trips: Trip[]
+
+  // API keys for external services
+  openai_api_key?: string
+  amazon_access_key?: string
+  amazon_secret_key?: string
+  amazon_associate_tag?: string
+  walmart_client_id?: string
+  walmart_client_secret?: string
 }
 
 export type UserInfo = Omit<User, 'currency'> & {

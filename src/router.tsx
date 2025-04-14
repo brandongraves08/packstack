@@ -11,6 +11,9 @@ import { RequestPasswordReset } from '@/pages/RequestPasswordReset'
 import { ResetPassword } from '@/pages/ResetPassword'
 import { Settings } from '@/pages/Settings'
 
+import { AdvancedDashboard } from './pages/AdvancedDashboard'
+import { EnhancedTripPlannerPage } from './pages/EnhancedTripPlanner'
+
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -22,8 +25,16 @@ export const router = createBrowserRouter([
         element: <Dashboard />,
       },
       {
+        path: '/dashboard',
+        element: <AdvancedDashboard />,
+      },
+      {
         path: '/inventory',
         element: <InventoryPage />,
+      },
+      {
+        path: '/trip-planner',
+        element: <EnhancedTripPlannerPage />,
       },
       {
         path: '/pack/new',

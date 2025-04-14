@@ -36,6 +36,8 @@ export type UpdateUser = {
   email?: string
   unit_temperature?: string
   unit_distance?: string
+  unit_weight?: string
+  currency?: string
   bio?: string | null
   instagram_url?: string
   youtube_url?: string
@@ -43,6 +45,12 @@ export type UpdateUser = {
   reddit_url?: string
   snap_url?: string
   personal_url?: string
+  openai_api_key?: string
+  amazon_access_key?: string
+  amazon_secret_key?: string
+  amazon_associate_tag?: string
+  walmart_client_id?: string
+  walmart_client_secret?: string
 }
 
 export type UpdateTripPhotoOrder = {

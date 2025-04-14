@@ -24,5 +24,10 @@ dist-ssr
 *.sln
 *.sw?
 
+# Environment variables
+.env
+.env.*
+!.env.example
+
 # Sentry Auth Token
 .env.sentry-build-plugin

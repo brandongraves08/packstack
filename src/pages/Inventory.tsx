@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { MoreHorizontal } from 'lucide-react'
 
+import { ImageAnalyzer } from '@/components/ImageAnalyzer'
 import { Button, Input } from '@/components/ui'
 import { DialogTrigger } from '@/components/ui/Dialog'
 import {
@@ -9,12 +10,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/DropdownMenu'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import { CategoryManagementModal } from '@/containers/CategoryManagementModal'
+import { FoodInventory } from '@/containers/Food/FoodInventory'
+import { GearInventory } from '@/containers/Gear/GearInventory'
 import { ImportCsvModal } from '@/containers/ImportCsvModal'
 import { ImportLighterpackModal } from '@/containers/ImportLighterpackModal'
 import { InventoryTable } from '@/containers/Inventory/InventoryTable'
 import { ItemForm } from '@/containers/ItemForm'
-import { ImageAnalyzer } from '@/components/ImageAnalyzer'
 import { downloadInventory } from '@/lib/download'
 import { useInventory } from '@/queries/item'
 
@@ -26,12 +29,13 @@ export const InventoryPage = () => {
   const [openCsvmport, setOpenCsvImport] = useState(false)
   const [openImageAnalyzer, setOpenImageAnalyzer] = useState(false)
   const [filter, setFilter] = useState('')
+  const [activeTab, setActiveTab] = useState('all')
 
   return (
     <div className="px-2 md:px-4 py-2">
-      <div className="flex justify-between mb-2 gap-2">
+      <div className="flex justify-between mb-4 gap-2">
         <Input
-          placeholder="Search gear..."
+          placeholder="Search inventory..."
           value={filter}
           onChange={e => setFilter(e.target.value)}
           className="max-w-xs"
@@ -44,7 +48,7 @@ export const InventoryPage = () => {
             onClose={() => setOpen(false)}
           >
             <DialogTrigger asChild>
-              <Button className="md:text-sm">Add Gear</Button>
+              <Button className="md:text-sm">Add Item</Button>
             </DialogTrigger>
           </ItemForm>
 
@@ -74,6 +78,32 @@ export const InventoryPage = () => {
           </DropdownMenu>
         </div>
       </div>
+
+      <Tabs
+        defaultValue="all"
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="mb-6"
+      >
+        <TabsList className="mb-4">
+          <TabsTrigger value="all">All Items</TabsTrigger>
+          <TabsTrigger value="gear">Gear</TabsTrigger>
+          <TabsTrigger value="food">Food</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="all" className="mt-0">
+          <InventoryTable searchFilter={filter} isLoading={isLoading} />
+        </TabsContent>
+
+        <TabsContent value="gear" className="mt-0">
+          <GearInventory />
+        </TabsContent>
+
+        <TabsContent value="food" className="mt-0">
+          <FoodInventory />
+        </TabsContent>
+      </Tabs>
+
       <ImportLighterpackModal
         open={openLighterpackImport}
         onOpenChange={setOpenLighterpackImport}
@@ -83,12 +113,10 @@ export const InventoryPage = () => {
         open={openReorder}
         onOpenChange={setOpenReorder}
       />
-      <ImageAnalyzer 
+      <ImageAnalyzer
         open={openImageAnalyzer}
         onOpenChange={setOpenImageAnalyzer}
       />
-      <InventoryTable searchFilter={filter} isLoading={isLoading} />
     </div>
   )
 }
-

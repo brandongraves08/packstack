@@ -3,6 +3,26 @@ import { Brand, Product } from './resources'
 
 export type Unit = 'g' | 'kg' | 'oz' | 'lb'
 
+export type NutritionInfo = {
+  calories?: number
+  protein?: number
+  carbs?: number
+  fat?: number
+  servingSize?: number
+  servingUnit?: string
+  servingsPerContainer?: number
+}
+
+export type FoodItemType =
+  | 'meal'
+  | 'snack'
+  | 'breakfast'
+  | 'lunch'
+  | 'dinner'
+  | 'drink'
+  | 'dessert'
+  | 'other'
+
 export type ItemForm = {
   itemname: string
   brand_id?: number
@@ -19,6 +39,14 @@ export type ItemForm = {
   consumable: boolean
   product_url: string
   notes: string
+  // Food-specific fields
+  is_food?: boolean
+  food_type?: FoodItemType
+  calories_per_serving?: number
+  expiration_date?: string
+  nutrition_info?: NutritionInfo
+  preparation_time?: number // in minutes
+  dietary_tags?: string[] // gluten-free, vegan, etc.
 }
 
 export type CreateItem = Omit<ItemForm, 'itemname'> & {
@@ -48,6 +76,15 @@ export type Item = {
   updated_at: string
   weight?: number | null
   wishlist?: boolean
+
+  // Food-specific fields
+  is_food?: boolean
+  food_type?: FoodItemType
+  calories_per_serving?: number
+  expiration_date?: string
+  nutrition_info?: NutritionInfo
+  preparation_time?: number
+  dietary_tags?: string[]
 
   category?: ItemCategory
   brand?: Brand

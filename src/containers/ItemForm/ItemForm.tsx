@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import * as z from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 
+import { ImageAnalyzer } from '@/components/ImageAnalyzer'
 import { Input } from '@/components/ui'
 import { Button } from '@/components/ui'
 import { Checkbox } from '@/components/ui/Checkbox'
@@ -33,11 +34,14 @@ import {
   SelectValue,
 } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
+import { AmazonProductSearch } from '@/containers/AmazonProductSearch'
+import { AmazonProduct } from '@/lib/amazonApi'
 import { convertWeight } from '@/lib/weight'
 import { useCategories } from '@/queries/category'
 import {
   useCreateItem,
   useDeleteItem,
+  useItemSearch,
   useProductDetails,
   useUpdateItem,
 } from '@/queries/item'
@@ -99,12 +103,17 @@ export const ItemForm: FC<Props> = ({
   children,
 }) => {
   const [brandSearch, setBrandSearch] = useState(item?.brand?.name || '')
+  const [itemNameSearch, setItemNameSearch] = useState(item?.name || '')
   const [another, setAnother] = useState(false)
+  const [imageAnalyzerOpen, setImageAnalyzerOpen] = useState(false)
+  const [amazonSearchOpen, setAmazonSearchOpen] = useState(false)
+
   const createItem = useCreateItem()
   const updateItem = useUpdateItem()
   const deleteItem = useDeleteItem()
   const productDetails = useProductDetails()
   const searchBrands = useSearchBrands({ query: brandSearch, enabled: open })
+  const { data: itemSuggestions = [] } = useItemSearch(itemNameSearch, open)
 
   const form = useForm<ItemFormValues>({
     resolver: zodResolver(schema),
@@ -146,272 +155,488 @@ export const ItemForm: FC<Props> = ({
         label: name,
         value: id,
       })),
-    [brand]
+    [brand?.products]
   )
 
   const productVariantOptions = useMemo(
     () =>
-      (productVariants || []).map(({ id, name }) => ({
-        label: name,
+      (productVariants || []).map(({ id, name, weight, unit }) => ({
+        label: `${name}${
+          weight && unit ? ` (${weight}${unit === 'g' ? 'g' : 'oz'})` : ''
+        }`,
         value: id,
+        weight,
+        unit,
       })),
     [productVariants]
   )
 
   const categoryOptions = useMemo(
     () =>
-      (categories || []).map(({ id, name }) => ({
-        label: name,
-        value: id,
-      })),
+      (categories || [])
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(({ id, name }) => ({
+          label: name,
+          value: id,
+        })),
     [categories]
   )
 
-  const onSelectProduct = (id: number) => {
-    const brandId = form.getValues('brand_id')
-    productDetails.mutate(
-      { productId: id, brandId },
-      {
-        onSuccess: data => {
-          form.setValue('weight', data.median)
-          form.setValue('unit', data.unit)
-        },
-      }
-    )
-  }
-
-  const onSubmit = (data: ItemFormValues) => {
-    console.log(data)
-    const { itemname, ...payload } = data
-    if (item) {
-      updateItem.mutate(
-        { ...payload, name: itemname, id: item.id },
+  // Auto-fill product details
+  useEffect(() => {
+    // Only fetch if a product is selected but not the variant
+    if (brandId && productId && !form.watch('product_variant_id')) {
+      // Fetch product details
+      productDetails.mutate(
+        { brandId, productId },
         {
-          onSuccess: onClose,
-        }
-      )
-    } else {
-      createItem.mutate(
-        { ...payload, name: itemname },
-        {
-          onSuccess: () => {
-            form.reset(formDefaults())
-            if (!another) {
-              onClose()
+          onSuccess: data => {
+            if (data.name) {
+              form.setValue('itemname', data.name)
+            }
+            if (data.weight) {
+              const { value, unit } = convertWeight(data.weight, data.unit)
+              form.setValue('weight', value)
+              form.setValue('unit', unit as Unit)
+            }
+            if (data.price != null) {
+              form.setValue('price', data.price)
+            }
+            if (data.url) {
+              form.setValue('product_url', data.url)
+            }
+            if (data.description) {
+              form.setValue('notes', data.description)
             }
           },
         }
       )
     }
+  }, [brandId, productId, form, productDetails])
+
+  // Auto-fill product variant details
+  useEffect(() => {
+    const variantId = form.watch('product_variant_id')
+    if (brandId && productId && variantId) {
+      const variant = productVariantOptions.find(
+        ({ value }) => value === variantId
+      )
+
+      if (variant?.weight) {
+        const { value, unit } = convertWeight(variant.weight, variant.unit)
+        form.setValue('weight', value)
+        form.setValue('unit', unit as Unit)
+      }
+    }
+  }, [form.watch('product_variant_id')])
+
+  const onSelectProduct = (id: number) => {
+    if (brand && brandId) {
+      form.setValue('product_id', id)
+      form.setValue('product_new', undefined)
+      form.setValue('product_variant_id', undefined)
+      form.setValue('product_variant_new', undefined)
+    }
   }
 
-  const onDelete = () => {
-    if (!item) return
-    deleteItem.mutate(item.id, {
-      onSuccess: onClose,
-    })
+  const onSubmit = async (data: ItemFormValues) => {
+    try {
+      if (item) {
+        const res = await updateItem.mutateAsync({
+          ...data,
+          item_id: item.id,
+        })
+        onSuccess()
+        return res
+      } else {
+        const res = await createItem.mutateAsync(data)
+        onSuccess()
+        return res
+      }
+    } catch (err) {
+      // swallow, handled by react-query
+    }
+
+    function onSuccess() {
+      if (!another) {
+        onClose()
+      } else {
+        form.reset(formDefaults())
+      }
+    }
+  }
+
+  const onDelete = async () => {
+    if (!item?.id) return
+    await deleteItem.mutateAsync(item.id)
+    onClose()
+  }
+
+  const handleImageAnalyzed = () => {
+    // This will be called after an image was successfully analyzed and added to inventory
+    setImageAnalyzerOpen(false)
+  }
+
+  const handleAmazonProductSelect = (product: AmazonProduct) => {
+    // Set form values based on the Amazon product
+    form.setValue('itemname', product.title)
+
+    // Set brand if present
+    if (product.brand) {
+      form.setValue('brand_new', product.brand)
+      form.setValue('brand_id', undefined) // Clear any selected brand ID
+    }
+
+    // Extract price - remove currency symbol and convert to number
+    if (product.price) {
+      const priceNumber = parseFloat(product.price.replace(/[^0-9.]/g, ''))
+      if (!isNaN(priceNumber)) {
+        form.setValue('price', priceNumber)
+      }
+    }
+
+    // Set product URL
+    if (product.url) {
+      form.setValue('product_url', product.url)
+    }
+
+    // Close the Amazon search dialog
+    setAmazonSearchOpen(false)
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {children}
-      <DialogContent onPointerDownOutside={e => e.preventDefault()}>
+      <DialogContent className="max-h-screen lg:max-w-screen-md overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-        <ScrollArea className="max-h-[60vh] w-[100%] px-2" type="always">
+        <ScrollArea className="flex-grow">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} id="item-form">
+            <form
+              id="item-form"
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-4 px-1"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <div className="space-x-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setImageAnalyzerOpen(true)}
+                  >
+                    Analyze Image
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAmazonSearchOpen(true)}
+                  >
+                    Search Amazon
+                  </Button>
+                </div>
+              </div>
+
+              {children}
+
               <FormField
                 control={form.control}
                 name="itemname"
                 render={({ field }) => (
-                  <FormItem className="my-4">
-                    <FormLabel>Item Name</FormLabel>
-                    <FormControl>
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <div className="relative">
                       <Input
-                        placeholder="backpack, tent, etc."
+                        placeholder="Item name"
                         {...field}
-                        tabIndex={1}
+                        onChange={e => {
+                          field.onChange(e)
+                          setItemNameSearch(e.target.value)
+                        }}
                       />
-                    </FormControl>
+                      {itemSuggestions.length > 0 &&
+                        itemNameSearch.length >= 2 && (
+                          <div className="absolute z-10 mt-1 w-full bg-background border rounded-md shadow-lg max-h-60 overflow-auto">
+                            {itemSuggestions.map(suggestion => (
+                              <div
+                                key={suggestion.id}
+                                className="px-4 py-2 cursor-pointer hover:bg-accent flex flex-col"
+                                onClick={() => {
+                                  field.onChange(suggestion.name)
+                                  setItemNameSearch(suggestion.name)
+                                  // If brand field is empty, also set the brand
+                                  if (
+                                    !form.getValues('brand_id') &&
+                                    !form.getValues('brand_new')
+                                  ) {
+                                    form.setValue('brand_new', suggestion.brand)
+                                    setBrandSearch(suggestion.brand)
+                                  }
+                                }}
+                              >
+                                <span className="font-medium">
+                                  {suggestion.name}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {suggestion.brand}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <FormItem className="flex flex-col my-4">
-                <FormLabel>Manufacturer</FormLabel>
+              <FormField
+                control={form.control}
+                name="brand_id"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Brand</FormLabel>
+                    <div className="flex-1 pr-1">
+                      <Combobox
+                        placeholder="Search brands"
+                        value={field.value}
+                        onValueChange={value => {
+                          field.onChange(value)
+                          form.setValue('brand_new', undefined)
+                        }}
+                        items={brandOptions}
+                        onInputChange={value => setBrandSearch(value)}
+                        searchValue={brandSearch}
+                      />
+                    </div>
 
-                <Combobox
-                  value={brandId}
-                  options={brandOptions}
-                  onSearch={setBrandSearch}
-                  isLoading={searchBrands.isLoading}
-                  creatable
-                  tabIndex={2}
-                  label="Manufacturers"
-                  onSelect={({ label, value, isNew }) => {
-                    if (isNew) {
-                      form.setValue('brand_new', label)
-                    } else {
-                      form.setValue('brand_id', value as number)
-                    }
-                  }}
-                  onRemove={() => {
-                    form.setValue('brand_id', undefined)
-                    form.setValue('brand_new', undefined)
-                    form.setValue('product_id', undefined)
-                    form.setValue('product_new', undefined)
-                    form.setValue('product_variant_id', undefined)
-                    form.setValue('product_variant_new', undefined)
-                  }}
-                />
-                <FormMessage />
-              </FormItem>
-
-              <div className="my-4 flex gap-4">
-                <FormItem className="flex flex-col w-1/2">
-                  <FormLabel>Product</FormLabel>
-
-                  <Combobox
-                    value={form.watch('product_id')}
-                    options={productOptions}
-                    disabled={noBrandSelected}
-                    creatable
-                    label="Products"
-                    tabIndex={3}
-                    onSelect={({ label, value, isNew }) => {
-                      if (isNew) {
-                        form.setValue('product_new', label)
-                      } else {
-                        const id = value as number
-                        form.setValue('product_id', id)
-                        onSelectProduct(id)
-                      }
-                    }}
-                    onRemove={() => {
-                      form.setValue('product_id', undefined)
-                      form.setValue('product_new', undefined)
-                      form.setValue('product_variant_id', undefined)
-                      form.setValue('product_variant_new', undefined)
-                    }}
-                  />
-
-                  <FormDescription>
-                    {noBrandSelected
-                      ? 'Product name requires a manufacturer'
-                      : 'Name of the product'}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-
-                <FormItem className="flex flex-col w-1/2">
-                  <FormLabel>Variant</FormLabel>
-
-                  <Combobox
-                    value={form.watch('product_variant_id')}
-                    options={productVariantOptions}
-                    disabled={noProductSelected}
-                    creatable
-                    label="Variants"
-                    tabIndex={4}
-                    onSelect={({ label, value, isNew }) => {
-                      if (isNew) {
-                        form.setValue('product_variant_new', label)
-                      } else {
-                        form.setValue('product_variant_id', value as number)
-                      }
-                    }}
-                    onRemove={() => {
-                      form.setValue('product_variant_id', undefined)
-                      form.setValue('product_variant_new', undefined)
-                    }}
-                  />
-
-                  <FormDescription>
-                    {noProductSelected
-                      ? 'Variant requires a product'
-                      : 'Color, size, accessories, etc.'}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              </div>
-
-              <FormItem className="flex flex-col my-4">
-                <FormLabel>Category</FormLabel>
-
-                <Combobox
-                  value={form.watch('category_id')}
-                  options={categoryOptions}
-                  label="Categories"
-                  tabIndex={5}
-                  onSelect={({ label, value, isNew }) => {
-                    if (isNew) {
-                      form.setValue('category_new', label)
-                    } else {
-                      form.setValue('category_id', value as number)
-                    }
-                  }}
-                  onRemove={() => {
-                    form.setValue('category_id', undefined)
-                    form.setValue('category_new', undefined)
-                  }}
-                />
-
-                <FormMessage />
-              </FormItem>
-
-              <div className="flex gap-2 items-end my-4">
-                <div className="flex flex-1 items-end gap-0.5">
-                  <FormField
-                    control={form.control}
-                    name="weight"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Weight</FormLabel>
-                        <Input
-                          {...field}
-                          type="number"
-                          step=".01"
-                          placeholder="0.00"
-                          tabIndex={6}
-                          disabled={productDetails.isPending}
-                          onFocus={() => {
-                            if (!field.value) field.onChange('')
-                          }}
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        Or,{' '}
+                        <FormField
+                          control={form.control}
+                          name="brand_new"
+                          render={({ field }) => (
+                            <FormItem>
+                              <Input
+                                className="h-5"
+                                placeholder="Enter new brand name"
+                                {...field}
+                                value={field.value || ''}
+                                onChange={e => {
+                                  field.onChange(e.target.value)
+                                  form.setValue('brand_id', undefined)
+                                }}
+                              />
+                            </FormItem>
+                          )}
                         />
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      </div>
+                    </div>
+                  </FormItem>
+                )}
+              />
 
+              {!noBrandSelected && (
+                <FormField
+                  control={form.control}
+                  name="product_id"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Product</FormLabel>
+                      <div className="flex flex-1 gap-2">
+                        <div className="flex-1">
+                          <Combobox
+                            disabled={noBrandSelected}
+                            placeholder="Select product"
+                            value={field.value}
+                            onValueChange={value => {
+                              field.onChange(value)
+                              form.setValue('product_new', undefined)
+                              form.setValue('product_variant_id', undefined)
+                              form.setValue('product_variant_new', undefined)
+                              onSelectProduct(value)
+                            }}
+                            items={productOptions}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          Or,{' '}
+                          <FormField
+                            control={form.control}
+                            name="product_new"
+                            render={({ field }) => (
+                              <FormItem>
+                                <Input
+                                  className="h-5"
+                                  placeholder="Add new product"
+                                  {...field}
+                                  value={field.value || ''}
+                                  onChange={e => {
+                                    field.onChange(e.target.value)
+                                    form.setValue('product_id', undefined)
+                                    form.setValue(
+                                      'product_variant_id',
+                                      undefined
+                                    )
+                                    form.setValue(
+                                      'product_variant_new',
+                                      undefined
+                                    )
+                                  }}
+                                  disabled={noBrandSelected}
+                                />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {!noBrandSelected && !noProductSelected && (
+                <FormField
+                  control={form.control}
+                  name="product_variant_id"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Product Variant</FormLabel>
+                      <div className="flex flex-1 gap-2">
+                        <div className="flex-1">
+                          <Combobox
+                            disabled={noBrandSelected || noProductSelected}
+                            placeholder="Select variant"
+                            value={field.value}
+                            onValueChange={value => {
+                              field.onChange(value)
+                              form.setValue('product_variant_new', undefined)
+                            }}
+                            items={productVariantOptions}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          Or,{' '}
+                          <FormField
+                            control={form.control}
+                            name="product_variant_new"
+                            render={({ field }) => (
+                              <FormItem>
+                                <Input
+                                  className="h-5"
+                                  placeholder="Add new variant"
+                                  {...field}
+                                  value={field.value || ''}
+                                  onChange={e => {
+                                    field.onChange(e.target.value)
+                                    form.setValue(
+                                      'product_variant_id',
+                                      undefined
+                                    )
+                                  }}
+                                  disabled={
+                                    noBrandSelected || noProductSelected
+                                  }
+                                />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              <FormField
+                control={form.control}
+                name="category_id"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Category</FormLabel>
+                    <div className="flex flex-1 gap-2">
+                      <div className="flex-1">
+                        <Combobox
+                          placeholder="Select category"
+                          value={field.value}
+                          onValueChange={value => {
+                            field.onChange(value)
+                            form.setValue('category_new', undefined)
+                          }}
+                          items={categoryOptions}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        Or,{' '}
+                        <FormField
+                          control={form.control}
+                          name="category_new"
+                          render={({ field }) => (
+                            <FormItem>
+                              <Input
+                                className="h-5"
+                                placeholder="Add new category"
+                                {...field}
+                                value={field.value || ''}
+                                onChange={e => {
+                                  field.onChange(e.target.value)
+                                  form.setValue('category_id', undefined)
+                                }}
+                              />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex flex-1 gap-2">
+                <FormField
+                  control={form.control}
+                  name="weight"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>Weight</FormLabel>
+                      <Input
+                        {...field}
+                        type="number"
+                        step=".01"
+                        placeholder="0.00"
+                        onFocus={() => {
+                          if (!field.value) field.onChange('')
+                        }}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex-1">
                   <FormField
                     control={form.control}
                     name="unit"
                     render={({ field }) => (
                       <Select
-                        onValueChange={v => {
-                          const weight = convertWeight(
-                            form.getValues('weight'),
-                            field.value,
-                            v as Unit
-                          )
-                          // round weight to 2 decimal places as number
-                          const roundedWeight =
-                            Math.round(weight.weight * 100) / 100
-                          form.setValue('weight', roundedWeight)
-                          field.onChange(v)
-                        }}
-                        defaultValue={field.value}
                         value={field.value}
-                        disabled={productDetails.isPending}
+                        onValueChange={field.onChange}
                       >
-                        <FormControl>
-                          <SelectTrigger className="w-16">
-                            <SelectValue placeholder="Unit" />
-                          </SelectTrigger>
-                        </FormControl>
+                        <FormLabel>Unit</FormLabel>
+                        <SelectTrigger id="unit">
+                          <SelectValue placeholder="Select unit" />
+                        </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="g">g</SelectItem>
                           <SelectItem value="kg">kg</SelectItem>
@@ -532,6 +757,20 @@ export const ItemForm: FC<Props> = ({
           </div>
         </DialogFooter>
       </DialogContent>
+
+      {/* Image Analyzer Modal */}
+      <ImageAnalyzer
+        open={imageAnalyzerOpen}
+        onOpenChange={setImageAnalyzerOpen}
+        onItemCreated={handleImageAnalyzed}
+      />
+
+      {/* Amazon Product Search Modal */}
+      <AmazonProductSearch
+        open={amazonSearchOpen}
+        onOpenChange={setAmazonSearchOpen}
+        onSelectProduct={handleAmazonProductSelect}
+      />
     </Dialog>
   )
 }

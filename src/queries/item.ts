@@ -8,6 +8,7 @@ import {
   getProductDetails,
   importInventory,
   importLighterpack,
+  searchItems,
   updateCategorySortOrder,
   updateItem,
   updateItemSortOrder,
@@ -208,5 +209,24 @@ export const useImportInventory = () => {
         description: 'An unexpected error occurred. Please try again.',
       })
     },
+  })
+}
+
+type ItemSuggestion = {
+  id: number
+  name: string
+  brand: string
+}
+
+export const useItemSearch = (query: string, enabled: boolean = true) => {
+  return useQuery<ItemSuggestion[]>({
+    queryKey: ['item-search', query],
+    queryFn: async () => {
+      if (!query || query.length < 2) return []
+      const res = await searchItems(query)
+      return res.data
+    },
+    enabled: enabled && query.length >= 2,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   })
 }
