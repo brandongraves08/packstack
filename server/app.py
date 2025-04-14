@@ -2,10 +2,18 @@ import os
 import base64
 import json
 import re
-from flask import Flask, request, jsonify
+import time
+import logging
+from datetime import datetime
+from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from openai import OpenAI
+
+# AWS monitoring imports
+from aws_xray_sdk.core import xray_recorder, patch_all
+from aws_xray_sdk.ext.flask.middleware import XRayMiddleware
+import watchtower
 
 from dotenv import load_dotenv
 from amazon_api import AmazonProductAPI
@@ -15,6 +23,71 @@ load_dotenv()
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"], "allow_headers": ["Content-Type", "Authorization"]}})
+
+# Configure AWS X-Ray when in production
+if os.environ.get('FLASK_ENV') == 'production':
+    # Configure X-Ray
+    xray_recorder.configure(service='packstack-backend')
+    XRayMiddleware(app, xray_recorder)
+    patch_all()  # Patch all supported libraries for X-Ray
+    
+    # Configure CloudWatch Logs
+    handler = watchtower.CloudWatchLogHandler(log_group='packstack-logs')
+    app.logger.addHandler(handler)
+    logging.getLogger('werkzeug').addHandler(handler)
+
+# Request timer middleware
+@app.before_request
+def start_timer():
+    g.start = time.time()
+    g.request_id = request.headers.get('X-Request-ID', f"req-{datetime.now().strftime('%Y%m%d%H%M%S%f')}")
+
+# Structured logging after each request
+@app.after_request
+def log_request(response):
+    if request.path == '/health_check':
+        return response  # Skip logging health checks to reduce noise
+        
+    now = time.time()
+    duration = round(now - g.start, 3)
+    
+    # Create structured log entry
+    log_data = {
+        "request_id": g.request_id,
+        "method": request.method,
+        "path": request.path,
+        "status": response.status_code,
+        "duration_ms": duration * 1000,
+        "content_length": response.content_length,
+        "timestamp": datetime.now().isoformat(),
+        "user_agent": request.headers.get('User-Agent')
+    }
+    
+    # Add client IP if available
+    if request.headers.get('X-Forwarded-For'):
+        log_data["client_ip"] = request.headers.get('X-Forwarded-For')
+    
+    # Add a segment for AWS X-Ray tracing in production
+    if os.environ.get('FLASK_ENV') == 'production' and not request.path == '/health_check':
+        try:
+            xray_recorder.current_segment().put_annotation('request_id', g.request_id)
+            xray_recorder.current_segment().put_metadata('request', {
+                'path': request.path,
+                'method': request.method,
+                'duration': duration
+            })
+        except Exception as e:
+            app.logger.error(f"Error adding X-Ray annotations: {str(e)}")
+    
+    # Determine log level based on status code
+    if response.status_code >= 500:
+        app.logger.error(json.dumps(log_data))
+    elif response.status_code >= 400:
+        app.logger.warning(json.dumps(log_data))
+    else:
+        app.logger.info(json.dumps(log_data))
+        
+    return response
 
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
@@ -644,10 +717,53 @@ def get_weather_forecast():
         'forecast': forecast
     })
 
-@app.route('/health', methods=['GET'])
+@app.route('/health_check', methods=['GET'])
 def health_check():
-    """Endpoint to verify server is running"""
-    return jsonify({'status': 'healthy', 'message': 'Server is running'}), 200
+    """Enhanced endpoint to verify server is running and check subsystem health"""
+    health_status = {
+        'status': 'healthy',
+        'timestamp': datetime.now().isoformat(),
+        'version': os.environ.get('APP_VERSION', '1.0.0'),
+        'environment': os.environ.get('FLASK_ENV', 'development'),
+        'subsystems': {
+            'openai_api': test_openai_connection_status(),
+            'amazon_api': test_amazon_api_status(),
+            'walmart_api': test_walmart_api_status(),
+            'file_storage': os.path.exists(UPLOAD_FOLDER)
+        }
+    }
+    
+    # Determine overall health
+    if not all(health_status['subsystems'].values()):
+        health_status['status'] = 'degraded'
+    
+    return jsonify(health_status)
+
+def test_openai_connection_status():
+    """Test if OpenAI API is accessible"""
+    try:
+        api_key = os.getenv('OPENAI_API_KEY')
+        if not api_key:
+            return False
+        
+        # Just check if the key exists and is properly formatted
+        return len(api_key) > 20
+    except Exception:
+        return False
+
+def test_amazon_api_status():
+    """Test if Amazon API is configured"""
+    try:
+        return amazon_api is not None
+    except Exception:
+        return False
+
+def test_walmart_api_status():
+    """Test if Walmart API is configured"""
+    try:
+        return walmart_api is not None
+    except Exception:
+        return False
 
 @app.route('/user', methods=['OPTIONS', 'POST'])
 def register_user():

@@ -14,11 +14,19 @@ run:
   command: cd server && gunicorn --bind=0.0.0.0:8080 app:app
   network:
     port: 8080
+  health-check:
+    path: /health_check
+    interval: 10
+    timeout: 5
+    healthy-threshold: 3
+    unhealthy-threshold: 5
   env:
     - name: FLASK_ENV
       value: "production"
     - name: PORT
       value: "8080"
+    - name: APP_VERSION
+      value: "1.0.0"
     - name: OPENAI_API_KEY
       value: "${OPENAI_API_KEY}"
     - name: REACT_APP_API_URL
