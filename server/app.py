@@ -886,4 +886,6 @@ def test_openai_connection():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
-    app.run(host='0.0.0.0', debug=False, port=port)
+    # In development use debug mode, in production it will be overridden by gunicorn
+    debug_mode = os.environ.get('FLASK_ENV', 'development') == 'development'
+    app.run(host='0.0.0.0', debug=debug_mode, port=port)

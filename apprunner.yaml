@@ -11,13 +11,14 @@ build:
       - npm run build
 run:
   runtime-version: 3.9
-  command: cd server && python app.py
+  command: cd server && gunicorn --bind=0.0.0.0:8080 app:app
   network:
-    port: 5001
-    env: PORT
+    port: 8080
   env:
     - name: FLASK_ENV
       value: "production"
+    - name: PORT
+      value: "8080"
     - name: OPENAI_API_KEY
       value: "${OPENAI_API_KEY}"
     - name: REACT_APP_API_URL

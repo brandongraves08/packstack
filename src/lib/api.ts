@@ -28,7 +28,8 @@ import { http } from './base'
 // Define the base API URL for backend requests
 export const BASE_API_URL =
   process.env.NODE_ENV === 'production'
-    ? process.env.REACT_APP_API_URL || window.location.origin
+    ? process.env.REACT_APP_API_URL ||
+      (typeof window !== 'undefined' ? window.location.origin : '')
     : 'http://localhost:5001'
 
 /**
