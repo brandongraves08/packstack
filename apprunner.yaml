@@ -3,15 +3,13 @@ runtime: python3
 build:
   commands:
     pre-build:
+      - echo "Starting pre-build phase..."
       - pip install --upgrade pip
       - pip install -r server/requirements.txt
-      - apt-get update && apt-get install -y curl
-      - curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-      - apt-get install -y nodejs
-      - node -v && npm -v
-      - npm install
+      - echo "Python dependencies installed."
+      # Skip Node.js installation for now - focus on getting the Flask app running
     build:
-      - npm run build
+      - echo "Skipping frontend build for now"
 run:
   runtime-version: "3.8"
   command: cd server && gunicorn --bind=0.0.0.0:8080 app:app
