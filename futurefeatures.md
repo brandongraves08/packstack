@@ -81,6 +81,16 @@ Last Updated: 2025-04-14
 - [ ] Testing the ChatGPT integration and gear recommendations
 - [ ] Testing the Walmart shopping integration
 - [ ] Resolving API configuration issues for frontend-backend communication
+- [ ] Implement proper user authentication system
+  - [ ] Add database integration (PostgreSQL or MongoDB) for persistent user storage
+  - [ ] Create proper user models and schemas for account management
+  - [ ] Implement secure password hashing and validation
+  - [ ] Set up JWT token-based authentication with proper expiration
+  - [ ] Replace mock user endpoints with real database operations
+  - [ ] Add user profile management (update, delete account)
+  - [ ] Implement email verification workflow
+  - [ ] Add password reset functionality
+  - [ ] Create admin dashboard for user management
 
 ## Bug Fixes
 1. Fix potential CORS issues between frontend and backend server
