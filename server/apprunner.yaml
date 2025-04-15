@@ -1,0 +1,35 @@
+version: 1.0
+runtime: python3
+build:
+  commands:
+    pre-build:
+      - echo "Starting pre-build phase..."
+      - pip install --upgrade pip
+      - pip install -r requirements.txt
+      - cd ../frontend && npm install
+      - echo "All dependencies installed."
+    build:
+      - cd ../frontend && npm run build
+      - echo "Frontend built successfully."
+run:
+  runtime-version: 3.8
+  command: |
+    pip install concurrently || true
+    npx concurrently "gunicorn --bind=0.0.0.0:8080 app:app" "cd ../frontend && npm run preview -- --port 5173 --host 0.0.0.0"
+  network:
+    port: 5173
+    protocol: HTTP
+    # Optionally expose backend as well if needed
+    # - port: 8080
+    #   protocol: HTTP
+  env:
+    - name: FLASK_ENV
+      value: "production"
+    - name: PORT
+      value: "8080"
+    - name: APP_VERSION
+      value: "1.0.0"
+    - name: OPENAI_API_KEY
+      value: "${OPENAI_API_KEY}"
+    - name: REACT_APP_API_URL
+      value: "https://${APP_RUNNER_SERVICE_NAME}.${APP_RUNNER_SERVICE_ID}.${AWS_REGION}.awsapprunner.com"

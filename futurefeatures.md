@@ -87,6 +87,7 @@ Last Updated: 2025-04-14
   - Ensures secure handling of secrets (never commit actual `.env`)
   - Reference for what to set in AWS App Runner environment variables
 - [x] Added apprunner.yaml configuration for full-stack deployment (Flask backend + React frontend) to enable successful App Runner builds and deployments. Both servers are now started with concurrently, and dependencies/build steps for both are included.
+- [x] Adjusted apprunner.yaml to work with App Runner's source directory configuration (placed in /server directory with adjusted paths).
 
 ### In Progress
 - [ ] Testing the enhanced image analysis functionality
