@@ -3,23 +3,10 @@ runtime: python3
 build:
   commands:
     pre-build:
-      - echo "Starting pre-build phase..."
-      - pip install --upgrade pip
       - pip install -r requirements.txt
-      - pip install gunicorn==20.1.0
-      - echo "Pre-build phase completed successfully"
-      - echo "Installed packages:"
-      - pip list
-      - echo "Python executable path:"
-      - which python || echo "which command not found"
-      - echo "Python module path:"
-      - python -c "import sys; print(sys.path)"
 run:
   runtime-version: 3.8
-  command: |
-    python -c "import sys; print('Python path:', sys.path); print('Checking for gunicorn:'); try: import gunicorn; print('Gunicorn found!'); except ImportError as e: print('Error importing gunicorn:', e)" || true
-    python -c "import site; print('Site packages:', site.getsitepackages())" || true
-    PYTHONPATH=/var/task:/var/task/site-packages python app.py
+  command: python app.py
   network:
     port: 8080
   env:
@@ -27,9 +14,3 @@ run:
       value: "production"
     - name: PORT
       value: "8080"
-    - name: APP_VERSION
-      value: "1.0.0"
-    - name: OPENAI_API_KEY
-      value: "${OPENAI_API_KEY}"
-    - name: REACT_APP_API_URL
-      value: "https://${APP_RUNNER_SERVICE_NAME}.${APP_RUNNER_SERVICE_ID}.${AWS_REGION}.awsapprunner.com"
