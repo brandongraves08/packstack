@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
+import { Eye, EyeOff } from 'lucide-react'
 import * as z from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 
@@ -40,6 +41,11 @@ export const RegisterPage = () => {
   const [error, setError] = useState<string | undefined>()
   const navigate = useNavigate()
   const signUp = useUserRegister()
+  const [showPassword, setShowPassword] = useState(false)
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword)
+  }
 
   const onSubmit = (data: RegisterForm) => {
     setError(undefined)
@@ -75,11 +81,21 @@ export const RegisterPage = () => {
       </div>
       <div className="my-2">
         <label>Password</label>
-        <Input
-          {...register('password', { required: true })}
-          type="password"
-          placeholder="••••••"
-        />
+        <div className="relative">
+          <Input
+            {...register('password', { required: true })}
+            type={showPassword ? 'text' : 'password'}
+            placeholder="••••••"
+          />
+          <button
+            type="button"
+            onClick={togglePasswordVisibility}
+            className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+          >
+            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        </div>
         <p className=" text-red-300 text-xs my-1">{errors.password?.message}</p>
       </div>
       <div className="flex justify-end mt-4">

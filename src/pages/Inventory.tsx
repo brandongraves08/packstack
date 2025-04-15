@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { MoreHorizontal } from 'lucide-react'
 
 import { ImageAnalyzer } from '@/components/ImageAnalyzer'
@@ -22,17 +22,28 @@ import { downloadInventory } from '@/lib/download'
 import { useInventory } from '@/queries/item'
 
 export const InventoryPage = () => {
-  const { data: inventory, isLoading } = useInventory()
+  const { data: inventory, isLoading, error } = useInventory()
   const [open, setOpen] = useState(false)
   const [openReorder, setOpenReorder] = useState(false)
   const [openLighterpackImport, setOpenLighterpackImport] = useState(false)
-  const [openCsvmport, setOpenCsvImport] = useState(false)
+  const [openCsvImport, setOpenCsvImport] = useState(false)
   const [openImageAnalyzer, setOpenImageAnalyzer] = useState(false)
   const [filter, setFilter] = useState('')
   const [activeTab, setActiveTab] = useState('all')
+  const [showToast, setShowToast] = useState(false)
+
+  // Show error toast if error occurs
+  useEffect(() => {
+    if (error) setShowToast(true)
+  }, [error])
 
   return (
     <div className="px-2 md:px-4 py-2">
+      {showToast && (
+        <div className="bg-red-200 text-red-800 px-4 py-2 mb-2 rounded">
+          Failed to load inventory. Please try again later.
+        </div>
+      )}
       <div className="flex justify-between mb-4 gap-2">
         <Input
           placeholder="Search inventory..."
@@ -108,7 +119,7 @@ export const InventoryPage = () => {
         open={openLighterpackImport}
         onOpenChange={setOpenLighterpackImport}
       />
-      <ImportCsvModal open={openCsvmport} onOpenChange={setOpenCsvImport} />
+      <ImportCsvModal open={openCsvImport} onOpenChange={setOpenCsvImport} />
       <CategoryManagementModal
         open={openReorder}
         onOpenChange={setOpenReorder}

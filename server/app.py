@@ -774,6 +774,7 @@ def register_user():
         
     # Handle POST request for registration
     try:
+        # Parse request data
         data = request.get_json(force=True)
         print(f"User registration attempt with data: {data}")
         
@@ -786,8 +787,13 @@ def register_user():
                 'email': data.get('email', ''),
                 'created_at': '2025-04-14T09:00:00Z',
                 'updated_at': '2025-04-14T09:00:00Z',
-                'currency': 'USD',
-                'unit_weight': 'g',
+                'currency': {
+                    'code': 'USD',
+                    'name': 'United States Dollar',
+                    'symbol': '$'
+                },
+                'unit_weight': 'METRIC',
+                'unit_distance': 'KILOMETERS',
                 'trips': []
             }
         }), 201
@@ -817,8 +823,13 @@ def login_user():
                 'email': data.get('emailOrUsername', ''),
                 'created_at': '2025-04-14T09:00:00Z',
                 'updated_at': '2025-04-14T09:00:00Z',
-                'currency': 'USD',
-                'unit_weight': 'g',
+                'currency': {
+                    'code': 'USD',
+                    'name': 'United States Dollar',
+                    'symbol': '$'
+                },
+                'unit_weight': 'METRIC',
+                'unit_distance': 'KILOMETERS',
                 'trips': []
             }
         }), 200

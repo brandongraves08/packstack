@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
+import { Eye, EyeOff } from 'lucide-react'
 
 import { Button, Input } from '@/components/ui'
 import { Mixpanel } from '@/lib/mixpanel'
@@ -17,6 +18,11 @@ export const LoginPage = () => {
   const [error, setError] = useState<string | undefined>()
   const navigate = useNavigate()
   const login = useUserLogin()
+  const [showPassword, setShowPassword] = useState(false)
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword)
+  }
 
   const onSubmit = (data: LoginForm) => {
     login.mutate(data, {
@@ -60,12 +66,22 @@ export const LoginPage = () => {
             Forgot password?
           </Link>
         </div>
-        <Input
-          {...register('password', { required: true })}
-          type="password"
-          placeholder="••••••"
-          tabIndex={2}
-        />
+        <div className="relative">
+          <Input
+            {...register('password', { required: true })}
+            type={showPassword ? 'text' : 'password'}
+            placeholder="••••••"
+            tabIndex={2}
+          />
+          <button
+            type="button"
+            onClick={togglePasswordVisibility}
+            className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+          >
+            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        </div>
       </div>
       <div className="flex justify-end mt-4">
         <Button

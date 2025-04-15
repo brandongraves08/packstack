@@ -39,6 +39,32 @@ Last Updated: 2025-04-14
 - [x] Created FoodItemForm with calorie and nutritional information fields
 - [x] Developed dedicated Gear Inventory view with category filtering
 - [x] Enhanced main Inventory page with specialized tabs for Food and Gear
+- [x] Fixed AWS App Runner deployment configuration by removing unsupported 'health-check' block from apprunner.yaml
+  - App Runner deployments now succeed with validated configuration
+  - Health checks are handled by default App Runner mechanisms
+- [x] Updated Python runtime version in AWS App Runner config to use compatible version "3.8"
+  - Fixed runtime version format to ensure deployment compatibility
+  - Resolved "runtime version not supported" deployment errors
+- [x] Improved App Runner deployment stability with enhanced pre-build configuration
+  - Split Node.js installation into separate steps for better error isolation
+  - Added package verification steps to diagnose build issues
+  - Added proper dependency prerequisites for installation commands
+- [x] Simplified App Runner configuration for focused backend deployment
+  - Temporarily disabled Node.js installation steps to isolate build issues
+  - Added diagnostic echo statements for better error tracing
+  - Focused deployment on Flask backend to establish working server first
+- [x] Fixed authentication system data format inconsistencies between backend endpoints
+  - Standardized response format for currency and unit settings across all user endpoints
+  - Resolved data format issues causing 400 errors in frontend-backend communication
+- [x] Enhanced user experience with UI improvements
+  - Added password visibility toggles to login and registration forms
+  - Added confirmation toast notifications when updating settings
+  - Added show/hide toggles for sensitive API keys in the settings page
+- [x] Updated AWS App Runner configuration to fix deployment failures
+  - Removed quotes around runtime version number to match AWS requirements
+  - Simplified build commands to improve reliability
+  - Modified gunicorn execution to use Python module syntax for better compatibility
+  - Added clear echo statements for better build process visibility
 
 ### In Progress
 - [ ] Testing the enhanced image analysis functionality
@@ -98,8 +124,8 @@ Last Updated: 2025-04-14
   - **Note**: Server is designed to support different models via configuration
 - [x] Implement content filtering for user prompts
 - [x] Add specialized prompts for gear recommendations
-- [ ] Create specialized models for gear weight optimization
 - [x] Develop API for packing list generation based on trip parameters
+- [ ] Create specialized models for gear weight optimization
 
 ### 3. Amazon Shopping Integration
 - [x] Implement Amazon Product Advertising API integration

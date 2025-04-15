@@ -1,6 +1,7 @@
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
-import { LogOut } from 'lucide-react'
+import { Check, Eye, EyeOff, LogOut } from 'lucide-react'
 import * as z from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { SelectValue } from '@radix-ui/react-select'
@@ -74,10 +75,22 @@ export const Settings = () => {
     },
   })
 
+  const [showOpenAIKey, setShowOpenAIKey] = useState(false)
+  const [showAmazonKeys, setShowAmazonKeys] = useState(false)
+  const [showWalmartKeys, setShowWalmartKeys] = useState(false)
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false)
+
+  const toggleOpenAIKeyVisibility = () => setShowOpenAIKey(!showOpenAIKey)
+  const toggleAmazonKeysVisibility = () => setShowAmazonKeys(!showAmazonKeys)
+  const toggleWalmartKeysVisibility = () => setShowWalmartKeys(!showWalmartKeys)
+
   const onSubmit = (data: SettingsForm) => {
     updateUser.mutate(data, {
       onSuccess: () => {
         Mixpanel.track('Settings:Updated', { ...data })
+        setShowSaveSuccess(true)
+        // Hide success message after 3 seconds
+        setTimeout(() => setShowSaveSuccess(false), 3000)
       },
     })
   }
@@ -89,6 +102,12 @@ export const Settings = () => {
 
   return (
     <div className="max-w-lg mx-auto my-8">
+      {showSaveSuccess && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4 flex items-center">
+          <Check className="mr-2" size={16} />
+          <span>Settings saved successfully!</span>
+        </div>
+      )}
       <Box>
         <h2>General Settings</h2>
         <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -229,7 +248,26 @@ export const Settings = () => {
                 <FormItem className="my-4">
                   <FormLabel>OpenAI API Key</FormLabel>
                   <FormControl>
-                    <Input type="password" {...field} />
+                    <div className="relative">
+                      <Input
+                        type={showOpenAIKey ? 'text' : 'password'}
+                        {...field}
+                      />
+                      <button
+                        type="button"
+                        onClick={toggleOpenAIKeyVisibility}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
+                        aria-label={
+                          showOpenAIKey ? 'Hide API key' : 'Show API key'
+                        }
+                      >
+                        {showOpenAIKey ? (
+                          <EyeOff size={16} />
+                        ) : (
+                          <Eye size={16} />
+                        )}
+                      </button>
+                    </div>
                   </FormControl>
                   <p className="text-xs text-muted-foreground">
                     Required for AI-powered recommendations.
@@ -274,7 +312,26 @@ export const Settings = () => {
                 <FormItem className="my-4">
                   <FormLabel>Amazon Access Key</FormLabel>
                   <FormControl>
-                    <Input type="password" {...field} />
+                    <div className="relative">
+                      <Input
+                        type={showAmazonKeys ? 'text' : 'password'}
+                        {...field}
+                      />
+                      <button
+                        type="button"
+                        onClick={toggleAmazonKeysVisibility}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
+                        aria-label={
+                          showAmazonKeys ? 'Hide API key' : 'Show API key'
+                        }
+                      >
+                        {showAmazonKeys ? (
+                          <EyeOff size={16} />
+                        ) : (
+                          <Eye size={16} />
+                        )}
+                      </button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -288,7 +345,26 @@ export const Settings = () => {
                 <FormItem className="my-4">
                   <FormLabel>Amazon Secret Key</FormLabel>
                   <FormControl>
-                    <Input type="password" {...field} />
+                    <div className="relative">
+                      <Input
+                        type={showAmazonKeys ? 'text' : 'password'}
+                        {...field}
+                      />
+                      <button
+                        type="button"
+                        onClick={toggleAmazonKeysVisibility}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
+                        aria-label={
+                          showAmazonKeys ? 'Hide API key' : 'Show API key'
+                        }
+                      >
+                        {showAmazonKeys ? (
+                          <EyeOff size={16} />
+                        ) : (
+                          <Eye size={16} />
+                        )}
+                      </button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -328,7 +404,9 @@ export const Settings = () => {
                 <FormItem className="my-4">
                   <FormLabel>Walmart Client ID</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <div className="relative">
+                      <Input {...field} />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -342,7 +420,26 @@ export const Settings = () => {
                 <FormItem className="my-4">
                   <FormLabel>Walmart Client Secret</FormLabel>
                   <FormControl>
-                    <Input type="password" {...field} />
+                    <div className="relative">
+                      <Input
+                        type={showWalmartKeys ? 'text' : 'password'}
+                        {...field}
+                      />
+                      <button
+                        type="button"
+                        onClick={toggleWalmartKeysVisibility}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
+                        aria-label={
+                          showWalmartKeys ? 'Hide API key' : 'Show API key'
+                        }
+                      >
+                        {showWalmartKeys ? (
+                          <EyeOff size={16} />
+                        ) : (
+                          <Eye size={16} />
+                        )}
+                      </button>
+                    </div>
                   </FormControl>
                   <p className="text-xs text-muted-foreground">
                     Required for Walmart product recommendations. Sign up at{' '}

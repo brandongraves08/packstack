@@ -7,12 +7,11 @@ build:
       - pip install --upgrade pip
       - pip install -r server/requirements.txt
       - echo "Python dependencies installed."
-      # Skip Node.js installation for now - focus on getting the Flask app running
     build:
-      - echo "Skipping frontend build for now"
+      - echo "Build phase complete"
 run:
-  runtime-version: "3.8"
-  command: cd server && gunicorn --bind=0.0.0.0:8080 app:app
+  runtime-version: 3.8
+  command: cd server && python -m gunicorn --bind=0.0.0.0:8080 app:app
   network:
     port: 8080
   env:
