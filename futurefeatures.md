@@ -58,6 +58,7 @@ Last Updated: 2025-04-14
 - [x] Fixed apprunner.yaml configuration by removing unsupported fields (protocol) and using only the supported network properties (port). Set port to 8080 for the Flask backend.
 - [x] Simplified apprunner.yaml to focus only on the Flask backend deployment to resolve persistent deployment failures. Removed frontend build and concurrently running parts to eliminate potential sources of error.
 - [x] Further simplified apprunner.yaml build structure by removing the build phase section entirely, keeping only pre-build commands to resolve build command syntax errors.
+- [x] Added explicit gunicorn installation to apprunner.yaml to fix 'executable not found in $PATH' runtime error during container initialization.
 - [x] Enhanced AWS App Runner configuration with robust error handling and complete deployment
   - Added fallback paths for Node.js installation with proper error handling
   - Implemented conditional frontend build based on presence of package.json
