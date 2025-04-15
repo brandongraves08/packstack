@@ -53,28 +53,16 @@ Last Updated: 2025-04-14
   - Temporarily disabled Node.js installation steps to isolate build issues
   - Added diagnostic echo statements for better error tracing
   - Focused deployment on Flask backend to establish working server first
-- [x] Fixed authentication system data format inconsistencies between backend endpoints
-  - Standardized response format for currency and unit settings across all user endpoints
-  - Resolved data format issues causing 400 errors in frontend-backend communication
-- [x] Enhanced user experience with UI improvements
-  - Added password visibility toggles to login and registration forms
-  - Added confirmation toast notifications when updating settings
-  - Added show/hide toggles for sensitive API keys in the settings page
-- [x] Updated AWS App Runner configuration to fix deployment failures
-  - Removed quotes around runtime version number to match AWS requirements
-  - Simplified build commands to improve reliability
-  - Modified gunicorn execution to use Python module syntax for better compatibility
-  - Added clear echo statements for better build process visibility
+- [x] Added apprunner.yaml configuration for full-stack deployment (Flask backend + React frontend) to enable successful App Runner builds and deployments. Both servers are now started with concurrently, and dependencies/build steps for both are included.
+- [x] Adjusted apprunner.yaml to work with App Runner's source directory configuration (placed in /server directory with adjusted paths).
+- [x] Fixed apprunner.yaml configuration by removing unsupported fields (protocol) and using only the supported network properties (port). Set port to 8080 for the Flask backend.
+- [x] Simplified apprunner.yaml to focus only on the Flask backend deployment to resolve persistent deployment failures. Removed frontend build and concurrently running parts to eliminate potential sources of error.
+- [x] Further simplified apprunner.yaml build structure by removing the build phase section entirely, keeping only pre-build commands to resolve build command syntax errors.
 - [x] Enhanced AWS App Runner configuration with robust error handling and complete deployment
   - Added fallback paths for Node.js installation with proper error handling
   - Implemented conditional frontend build based on presence of package.json
   - Optimized gunicorn server configuration with multiple workers and increased timeout
   - Improved build phases with better error messaging for debugging deployments
-- [x] Further simplified AWS App Runner configuration to resolve build command failures
-  - Removed complex Node.js installation steps that were causing build failures
-  - Streamlined build process to focus only on essential backend components
-  - Simplified gunicorn command for maximum compatibility with App Runner environment
-  - Minimized build commands to reduce potential points of failure
 - [x] Added diagnostic build steps to AWS App Runner configuration
   - Included 'python --version' in build phase to verify Python environment
   - Added echo statement to confirm build phase completion
@@ -86,9 +74,6 @@ Last Updated: 2025-04-14
   - Documents all required environment variables for Flask backend
   - Ensures secure handling of secrets (never commit actual `.env`)
   - Reference for what to set in AWS App Runner environment variables
-- [x] Added apprunner.yaml configuration for full-stack deployment (Flask backend + React frontend) to enable successful App Runner builds and deployments. Both servers are now started with concurrently, and dependencies/build steps for both are included.
-- [x] Adjusted apprunner.yaml to work with App Runner's source directory configuration (placed in /server directory with adjusted paths).
-- [x] Fixed apprunner.yaml configuration by removing unsupported fields (protocol) and using only the supported network properties (port). Set port to 8080 for the Flask backend.
 
 ### In Progress
 - [ ] Testing the enhanced image analysis functionality

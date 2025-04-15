@@ -6,8 +6,7 @@ build:
       - echo "Starting pre-build phase..."
       - pip install --upgrade pip
       - pip install -r requirements.txt
-    build:
-      - echo "Build phase completed successfully"
+      - echo "Pre-build phase completed successfully"
 run:
   runtime-version: 3.8
   command: gunicorn --bind=0.0.0.0:8080 app:app
