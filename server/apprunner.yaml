@@ -8,9 +8,11 @@ build:
       - pip install -r requirements.txt
       - pip install gunicorn
       - echo "Pre-build phase completed successfully"
+      - echo "Installed packages:"
+      - pip list
 run:
   runtime-version: 3.8
-  command: gunicorn --bind=0.0.0.0:8080 app:app
+  command: python -m gunicorn --bind=0.0.0.0:8080 app:app
   network:
     port: 8080
   env:
