@@ -82,6 +82,10 @@ Last Updated: 2025-04-14
 - [x] Implemented workaround for App Runner build artifact requirement
   - Added 'mkdir -p build' to create a dummy build directory in the build phase
   - This satisfies App Runner's expectation for a build artifact and allows the build to succeed for backend-only deployments
+- [x] Added `.env.example` to the backend (`server/.env.example`)
+  - Documents all required environment variables for Flask backend
+  - Ensures secure handling of secrets (never commit actual `.env`)
+  - Reference for what to set in AWS App Runner environment variables
 
 ### In Progress
 - [ ] Testing the enhanced image analysis functionality
