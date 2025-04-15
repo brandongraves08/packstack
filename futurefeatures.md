@@ -88,6 +88,7 @@ Last Updated: 2025-04-14
   - Reference for what to set in AWS App Runner environment variables
 - [x] Added apprunner.yaml configuration for full-stack deployment (Flask backend + React frontend) to enable successful App Runner builds and deployments. Both servers are now started with concurrently, and dependencies/build steps for both are included.
 - [x] Adjusted apprunner.yaml to work with App Runner's source directory configuration (placed in /server directory with adjusted paths).
+- [x] Fixed apprunner.yaml configuration by removing unsupported fields (protocol) and using only the supported network properties (port). Set port to 8080 for the Flask backend.
 
 ### In Progress
 - [ ] Testing the enhanced image analysis functionality

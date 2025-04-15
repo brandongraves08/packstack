@@ -17,11 +17,7 @@ run:
     pip install concurrently || true
     npx concurrently "gunicorn --bind=0.0.0.0:8080 app:app" "cd ../frontend && npm run preview -- --port 5173 --host 0.0.0.0"
   network:
-    port: 5173
-    protocol: HTTP
-    # Optionally expose backend as well if needed
-    # - port: 8080
-    #   protocol: HTTP
+    port: 8080
   env:
     - name: FLASK_ENV
       value: "production"
