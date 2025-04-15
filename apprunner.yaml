@@ -8,6 +8,7 @@ build:
       - pip install -r server/requirements.txt
       - echo "Python dependencies installed."
     build:
+      - mkdir -p build
       - python --version
       - echo "Build phase completed successfully"
 run:

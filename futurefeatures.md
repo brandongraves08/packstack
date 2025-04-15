@@ -79,6 +79,9 @@ Last Updated: 2025-04-14
   - Included 'python --version' in build phase to verify Python environment
   - Added echo statement to confirm build phase completion
   - This helps isolate whether build failures are due to environment or command syntax
+- [x] Implemented workaround for App Runner build artifact requirement
+  - Added 'mkdir -p build' to create a dummy build directory in the build phase
+  - This satisfies App Runner's expectation for a build artifact and allows the build to succeed for backend-only deployments
 
 ### In Progress
 - [ ] Testing the enhanced image analysis functionality
