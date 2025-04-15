@@ -75,6 +75,10 @@ Last Updated: 2025-04-14
   - Streamlined build process to focus only on essential backend components
   - Simplified gunicorn command for maximum compatibility with App Runner environment
   - Minimized build commands to reduce potential points of failure
+- [x] Added diagnostic build steps to AWS App Runner configuration
+  - Included 'python --version' in build phase to verify Python environment
+  - Added echo statement to confirm build phase completion
+  - This helps isolate whether build failures are due to environment or command syntax
 
 ### In Progress
 - [ ] Testing the enhanced image analysis functionality

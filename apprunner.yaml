@@ -8,7 +8,8 @@ build:
       - pip install -r server/requirements.txt
       - echo "Python dependencies installed."
     build:
-      - echo "Build phase - skipping frontend build"
+      - python --version
+      - echo "Build phase completed successfully"
 run:
   runtime-version: 3.8
   command: cd server && python -m gunicorn --bind=0.0.0.0:8080 app:app
