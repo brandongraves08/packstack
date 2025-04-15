@@ -6,16 +6,11 @@ build:
       - echo "Starting pre-build phase..."
       - pip install --upgrade pip
       - pip install -r requirements.txt
-      - cd ../frontend && npm install
-      - echo "All dependencies installed."
     build:
-      - cd ../frontend && npm run build
-      - echo "Frontend built successfully."
+      - echo "Build phase completed successfully"
 run:
   runtime-version: 3.8
-  command: |
-    pip install concurrently || true
-    npx concurrently "gunicorn --bind=0.0.0.0:8080 app:app" "cd ../frontend && npm run preview -- --port 5173 --host 0.0.0.0"
+  command: gunicorn --bind=0.0.0.0:8080 app:app
   network:
     port: 8080
   env:
