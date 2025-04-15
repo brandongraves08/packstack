@@ -70,6 +70,11 @@ Last Updated: 2025-04-14
   - Implemented conditional frontend build based on presence of package.json
   - Optimized gunicorn server configuration with multiple workers and increased timeout
   - Improved build phases with better error messaging for debugging deployments
+- [x] Further simplified AWS App Runner configuration to resolve build command failures
+  - Removed complex Node.js installation steps that were causing build failures
+  - Streamlined build process to focus only on essential backend components
+  - Simplified gunicorn command for maximum compatibility with App Runner environment
+  - Minimized build commands to reduce potential points of failure
 
 ### In Progress
 - [ ] Testing the enhanced image analysis functionality

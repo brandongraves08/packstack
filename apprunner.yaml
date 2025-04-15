@@ -7,20 +7,11 @@ build:
       - pip install --upgrade pip
       - pip install -r server/requirements.txt
       - echo "Python dependencies installed."
-      # Trying Node.js installation again with proper error handling
-      - echo "Installing Node.js dependencies..."
-      - apt-get update && apt-get install -y curl
-      - curl -fsSL https://deb.nodesource.com/setup_18.x | bash - || echo "Node.js setup script failed, continuing..."
-      - apt-get install -y nodejs || echo "Node.js installation failed, continuing..."
-      - npm --version || echo "npm not available, skipping frontend build"
-      - if [ -f "package.json" ]; then npm install || echo "npm install failed, continuing..."; fi
     build:
-      - echo "Starting build phase..."
-      - if [ -f "package.json" ]; then npm run build || echo "Frontend build failed, continuing with backend only"; fi
-      - echo "Build phase complete"
+      - echo "Build phase - skipping frontend build"
 run:
   runtime-version: 3.8
-  command: cd server && python -m gunicorn --workers=2 --threads=4 --timeout=120 --bind=0.0.0.0:8080 app:app
+  command: cd server && python -m gunicorn --bind=0.0.0.0:8080 app:app
   network:
     port: 8080
   env:
