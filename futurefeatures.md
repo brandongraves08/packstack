@@ -86,6 +86,7 @@ Last Updated: 2025-04-14
   - Documents all required environment variables for Flask backend
   - Ensures secure handling of secrets (never commit actual `.env`)
   - Reference for what to set in AWS App Runner environment variables
+- [x] Added apprunner.yaml configuration for full-stack deployment (Flask backend + React frontend) to enable successful App Runner builds and deployments. Both servers are now started with concurrently, and dependencies/build steps for both are included.
 
 ### In Progress
 - [ ] Testing the enhanced image analysis functionality

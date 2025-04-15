@@ -6,16 +6,22 @@ build:
       - echo "Starting pre-build phase..."
       - pip install --upgrade pip
       - pip install -r server/requirements.txt
-      - echo "Python dependencies installed."
+      - cd frontend && npm install
+      - echo "All dependencies installed."
     build:
-      - mkdir -p build
-      - python --version
-      - echo "Build phase completed successfully"
+      - cd frontend && npm run build
+      - echo "Frontend built successfully."
 run:
   runtime-version: 3.8
-  command: cd server && python -m gunicorn --bind=0.0.0.0:8080 app:app
+  command: |
+    pip install concurrently || true
+    npx concurrently "cd server && gunicorn --bind=0.0.0.0:8080 app:app" "cd frontend && npm run preview -- --port 5173 --host 0.0.0.0"
   network:
-    port: 8080
+    port: 5173
+    protocol: HTTP
+    # Optionally expose backend as well if needed
+    # - port: 8080
+    #   protocol: HTTP
   env:
     - name: FLASK_ENV
       value: "production"
