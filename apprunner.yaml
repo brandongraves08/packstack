@@ -10,7 +10,7 @@ build:
     build:
       - npm run build
 run:
-  runtime-version: 3.9
+  runtime-version: 3.10
   command: cd server && gunicorn --bind=0.0.0.0:8080 app:app
   network:
     port: 8080
