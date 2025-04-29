@@ -206,6 +206,36 @@ Last Updated: 2025-04-14
 - [ ] Set up staging environment for pre-production testing
 - [ ] Implement blue/green deployment for zero-downtime updates
 
+## Code Analysis (2025-04-29)
+
+### Bugs and Issues
+- `analyze_image` endpoint lacks file size validation (`MAX_CONTENT_LENGTH`) and robust cleanup on failure.
+- Amazon wrappers misuse PA API endpoints and signature:
+  - `search_products` signs empty query params and posts to `/paapi5/getitems` instead of `/searchitems`.
+  - `get_product_details` references undefined `asin` variable in payload.
+- Mock auth endpoints (`register_user`, `login_user`, `update_user`) do not enforce input schemas, risking KeyError on missing fields.
+- Inconsistent logging: error handlers use `print` instead of `app.logger`, bypassing structured logs.
+- CORS is overly permissive (`*` origins, all methods), posing security risks.
+- External API calls use blocking `requests`, with no retry/backoff or caching.
+- Test endpoints print sensitive API keys to console.
+
+### Improvements
+- Enforce upload limits via `app.config['MAX_CONTENT_LENGTH']` to prevent large-file abuse.
+- Adopt Marshmallow or Pydantic for request validation, serialization, and error messages.
+- Replace synchronous `requests` with `httpx.AsyncClient` and implement retry/backoff logic.
+- Refactor `app.py` into Flask Blueprints (auth, items, external APIs) for modularity.
+- Centralize configuration in `config.py`, loading env-specific settings.
+- Use `app.logger` consistently and remove `print` statements for error logging.
+- Add caching layer (e.g., Redis) for frequent external API responses (weather, product search).
+
+### Future Enhancements
+- Integrate S3 (or CDN) for image storage and automated cleanup.
+- Support streaming responses for ChatGPT interactions to improve UX.
+- Implement rate limiting (Flask-Limiter) to prevent endpoint abuse.
+- Generate Swagger/OpenAPI docs (Flask-RESTX or flasgger) for all routes.
+- Add comprehensive unit and integration tests for critical paths.
+- Consider migrating to an async framework (FastAPI or Quart) for higher concurrency.
+
 ## Next Steps
 1. Improve testing of all implemented features
 2. Further refine the environment variable management

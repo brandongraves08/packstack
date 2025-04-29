@@ -5,7 +5,7 @@ import hashlib
 import base64
 import urllib.parse
 import json
-import requests
+import httpx
 from datetime import datetime
 
 from dotenv import load_dotenv
@@ -99,12 +99,21 @@ class AmazonProductAPI:
         headers['Authorization'] = auth_header
         
         try:
-            # Make request
-            response = requests.post(
-                self.endpoint,
-                data=json.dumps(payload),
-                headers=headers
-            )
+            # Make request with retries
+            with httpx.Client(timeout=10.0) as client:
+                for attempt in range(3):
+                    try:
+                        response = client.post(
+                            self.endpoint,
+                            json=payload,
+                            headers=headers
+                        )
+                        response.raise_for_status()
+                        break
+                    except httpx.RequestError as e:
+                        if attempt == 2:
+                            return {'success': False, 'error': str(e), 'message': 'HTTP request failed after retries'}
+                        time.sleep(2 ** attempt)
             
             # Parse response
             if response.status_code == 200:
@@ -191,20 +200,37 @@ class AmazonProductAPI:
         headers['Authorization'] = auth_header
         
         try:
-            # Make request
-            response = requests.post(
-                f"https://{self.host}/paapi5/getitems",
-                data=json.dumps(payload),
-                headers=headers
-            )
+            # Make request with retries
+            with httpx.Client(timeout=10.0) as client:
+                for attempt in range(3):
+                    try:
+                        response = client.post(
+                            f"https://{self.host}/paapi5/getitems",
+                            json=payload,
+                            headers=headers
+                        )
+                        response.raise_for_status()
+                        break
+                    except httpx.RequestError as e:
+                        if attempt == 2:
+                            return {'success': False, 'error': str(e), 'message': 'HTTP request failed after retries'}
+                        time.sleep(2 ** attempt)
             
             # Parse response
             if response.status_code == 200:
                 data = response.json()
                 
                 # Extract relevant product information
-                if 'ItemsResult' in data and 'Items' in data['ItemsResult'] and asin in data['ItemsResult']['Items']:
-                    item = data['ItemsResult']['Items'][asin]
+                if 'ItemsResult' in data and 'Items' in data['ItemsResult']:
+                    items = data['ItemsResult']['Items']
+                    # Find item matching the ASIN
+                    item = next((itm for itm in items if itm.get('ASIN') == asin), None)
+                    if not item:
+                        return {
+                            'success': False,
+                            'error': 'Product not found',
+                            'message': 'The requested product could not be found'
+                        }
                     
                     # Get product weight if available
                     weight = None

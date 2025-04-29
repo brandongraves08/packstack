@@ -9,6 +9,7 @@ from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from openai import OpenAI
+from marshmallow import Schema, fields, validate, ValidationError
 
 # AWS monitoring imports
 from aws_xray_sdk.core import xray_recorder, patch_all
@@ -22,7 +23,8 @@ from walmart_api import WalmartAPI
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"], "allow_headers": ["Content-Type", "Authorization"]}})
+allowed_origins = os.getenv('CORS_ORIGINS', 'http://localhost:5173').split(',')
+CORS(app, resources={r"/*": {"origins": allowed_origins, "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"], "allow_headers": ["Content-Type", "Authorization"]}}, supports_credentials=True)
 
 # Configure AWS X-Ray when in production
 if os.environ.get('FLASK_ENV') == 'production':
@@ -91,17 +93,38 @@ def log_request(response):
 
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
-
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB limit
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 amazon_api = AmazonProductAPI()
 walmart_api = WalmartAPI()
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+class RegisterSchema(Schema):
+    username = fields.Str(required=True)
+    email = fields.Email(required=True)
+    password = fields.Str(required=True, validate=validate.Length(min=6))
+
+class LoginSchema(Schema):
+    emailOrUsername = fields.Str(required=True)
+    password = fields.Str(required=True, validate=validate.Length(min=6))
+
+class ChatSchema(Schema):
+    message = fields.Str(required=True)
+    history = fields.List(fields.Dict(), missing=[])
+
+class AmazonSearchSchema(Schema):
+    keywords = fields.Str(required=True)
+    category = fields.Str(missing='Outdoors')
+    max_results = fields.Int(missing=10)
+
+class ASINSchema(Schema):
+    asin = fields.Str(required=True)
+
+class WeatherSchema(Schema):
+    location = fields.Str(required=True)
 
 @app.route('/analyze', methods=['POST'])
 def analyze_image():
@@ -198,21 +221,27 @@ def analyze_image():
 @app.route('/chat', methods=['POST'])
 def chat_with_assistant():
     """Endpoint for ChatGPT interactions related to gear, packing lists, and recommendations"""
+    json_data = request.get_json(force=True)
     try:
-        print("Chat endpoint called")
-        data = request.json
-        print(f"Received chat data: {data}")
+        data = ChatSchema().load(json_data)
+    except ValidationError as err:
+        return jsonify({'errors': err.messages, 'success': False}), 400
+    app.logger.info(f"Chat request validated: {data}")
+    
+    try:
+        app.logger.info("Chat endpoint called")
+        app.logger.info(f"Received chat data: {data}")
         
         if not data:
-            print("No data received in request")
+            app.logger.info("No data received in request")
             return jsonify({'error': 'No data provided', 'success': False, 'message': 'Request body is empty'}), 400
             
         if 'message' not in data:
-            print(f"Missing 'message' field in request: {data.keys()}")
+            app.logger.info(f"Missing 'message' field in request: {data.keys()}")
             return jsonify({'error': 'No message provided', 'success': False, 'message': 'Message field is required'}), 400
         
         user_message = data.get('message', '')
-        print(f"User message: {user_message}")
+        app.logger.info(f"User message: {user_message}")
         
         # Apply content filtering to user message
         is_inappropriate, filtered_message = filter_content(user_message)
@@ -225,19 +254,19 @@ def chat_with_assistant():
         
         # Get conversation history if provided
         history = data.get('history', [])
-        print(f"Chat history length: {len(history)}")
+        app.logger.info(f"Chat history length: {len(history)}")
         
         # Check if OpenAI API key is available
         api_key = os.getenv('OPENAI_API_KEY')
         if not api_key:
-            print("OpenAI API key not configured")
+            app.logger.info("OpenAI API key not configured")
             return jsonify({
                 'success': False,
                 'error': 'API key not configured',
                 'message': 'Please add your OpenAI API key in the Settings page to use the chat feature.'
             }), 400
             
-        print(f"Using OpenAI API key: {api_key[:5]}...")
+        app.logger.info(f"Using OpenAI API key: {api_key[:5]}...")
         
         # Prepare the conversation for the API
         messages = []
@@ -262,16 +291,16 @@ def chat_with_assistant():
                 if isinstance(message, dict) and 'role' in message and 'content' in message:
                     messages.append(message)
                 else:
-                    print(f"Invalid message format in history: {message}")
+                    app.logger.info(f"Invalid message format in history: {message}")
         
         # Add the user's new message
         messages.append({"role": "user", "content": filtered_message})
         
-        print(f"Final messages to send to OpenAI: {len(messages)} messages")
+        app.logger.info(f"Final messages to send to OpenAI: {len(messages)} messages")
         
         # Make a request to the OpenAI API
         try:
-            print("Sending request to OpenAI API")
+            app.logger.info("Sending request to OpenAI API")
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=messages,
@@ -280,7 +309,7 @@ def chat_with_assistant():
             )
             
             assistant_response = response.choices[0].message.content
-            print(f"Received response from OpenAI: {assistant_response[:50]}...")
+            app.logger.info(f"Received response from OpenAI: {assistant_response[:50]}...")
             
             # Apply content filtering to assistant response
             is_inappropriate, filtered_response = filter_content(assistant_response)
@@ -301,7 +330,7 @@ def chat_with_assistant():
                 'history': history
             })
         except Exception as e:
-            print(f"OpenAI API error: {str(e)}")
+            app.logger.error(f"OpenAI API error: {str(e)}")
             return jsonify({
                 'success': False,
                 'error': 'OpenAI API error',
@@ -309,7 +338,7 @@ def chat_with_assistant():
             }), 500
             
     except Exception as e:
-        print(f"Chat endpoint error: {str(e)}")
+        app.logger.error(f"Chat endpoint error: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e),
@@ -456,7 +485,7 @@ def user_recommendations():
             if weather_response[1] == 200:  # Check if status code is 200
                 weather_data = weather_response[0].json
         except Exception as e:
-            print(f"Error fetching weather data: {str(e)}")
+            app.logger.error(f"Error fetching weather data: {str(e)}")
         
         # Construct prompt with user profile, trip parameters, inventory, and weather data
         prompt = f"""
@@ -552,15 +581,13 @@ def user_recommendations():
 @app.route('/amazon/search', methods=['GET'])
 def amazon_search():
     """Search for products on Amazon by keywords"""
-    keywords = request.args.get('keywords', '')
-    category = request.args.get('category', 'Outdoors')
-    max_results = int(request.args.get('max_results', 10))
-    
-    if not keywords:
-        return jsonify({'error': 'No search keywords provided'}), 400
-    
+    args = request.args.to_dict()
     try:
-        results = amazon_api.search_products(keywords, category, max_results)
+        params = AmazonSearchSchema().load(args)
+    except ValidationError as err:
+        return jsonify({'errors': err.messages}), 400
+    try:
+        results = amazon_api.search_products(params['keywords'], params['category'], params['max_results'])
         return jsonify(results)
     except Exception as e:
         return jsonify({
@@ -572,26 +599,22 @@ def amazon_search():
 @app.route('/amazon/product/<asin>', methods=['GET'])
 def amazon_product_details(asin):
     """Get detailed information for a specific Amazon product by ASIN"""
-    if not asin:
-        return jsonify({'error': 'No product ASIN provided'}), 400
-    
     try:
-        result = amazon_api.get_product_details(asin)
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'message': 'Error retrieving Amazon product details'
-        }), 500
+        data = ASINSchema().load({'asin': asin})
+    except ValidationError as err:
+        return jsonify({'errors': err.messages}), 400
+    result = amazon_api.get_product_details(data['asin'])
+    return jsonify(result)
 
 @app.route('/weather-forecast', methods=['GET'])
 def get_weather_forecast():
     """Get weather forecast for a location"""
-    location = request.args.get('location', '')
-    
-    if not location:
-        return jsonify({'error': 'No location provided'}), 400
+    args = request.args.to_dict()
+    try:
+        params = WeatherSchema().load(args)
+    except ValidationError as err:
+        return jsonify({'errors': err.messages}), 400
+    location = params['location']
     
     # Mock weather forecasting data - in a real application, this would call a weather API
     mock_forecasts = {
@@ -773,34 +796,32 @@ def register_user():
         return '', 204
         
     # Handle POST request for registration
+    json_data = request.get_json(force=True)
     try:
-        # Parse request data
-        data = request.get_json(force=True)
-        print(f"User registration attempt with data: {data}")
-        
-        # Mock successful registration response
-        return jsonify({
-            'token': 'mock_token_for_testing',
-            'user': {
-                'id': 1,
-                'username': data.get('username', ''),
-                'email': data.get('email', ''),
-                'created_at': '2025-04-14T09:00:00Z',
-                'updated_at': '2025-04-14T09:00:00Z',
-                'currency': {
-                    'code': 'USD',
-                    'name': 'United States Dollar',
-                    'symbol': '$'
-                },
-                'unit_weight': 'METRIC',
-                'unit_distance': 'KILOMETERS',
-                'trips': []
-            }
-        }), 201
-    except Exception as e:
-        print(f"Error processing registration: {str(e)}")
-        print(f"Request data: {request.data}")
-        return jsonify({'error': 'Bad request', 'message': str(e)}), 400
+        data = RegisterSchema().load(json_data)
+    except ValidationError as err:
+        return jsonify({'errors': err.messages}), 400
+    app.logger.info(f"User registration validated: {data}")
+    
+    # Mock successful registration response
+    return jsonify({
+        'token': 'mock_token_for_testing',
+        'user': {
+            'id': 1,
+            'username': data.get('username', ''),
+            'email': data.get('email', ''),
+            'created_at': '2025-04-14T09:00:00Z',
+            'updated_at': '2025-04-14T09:00:00Z',
+            'currency': {
+                'code': 'USD',
+                'name': 'United States Dollar',
+                'symbol': '$'
+            },
+            'unit_weight': 'METRIC',
+            'unit_distance': 'KILOMETERS',
+            'trips': []
+        }
+    }), 201
 
 @app.route('/user/login', methods=['OPTIONS', 'POST'])
 def login_user():
@@ -810,33 +831,32 @@ def login_user():
         return '', 204
         
     # Handle POST request for login
+    json_data = request.get_json(force=True)
     try:
-        data = request.get_json(force=True)
-        print(f"User login attempt with data: {data}")
-        
-        # Mock successful login response
-        return jsonify({
-            'token': 'mock_token_for_testing',
-            'user': {
-                'id': 1,
-                'username': data.get('emailOrUsername', '').split('@')[0] if '@' in data.get('emailOrUsername', '') else data.get('emailOrUsername', ''),
-                'email': data.get('emailOrUsername', ''),
-                'created_at': '2025-04-14T09:00:00Z',
-                'updated_at': '2025-04-14T09:00:00Z',
-                'currency': {
-                    'code': 'USD',
-                    'name': 'United States Dollar',
-                    'symbol': '$'
-                },
-                'unit_weight': 'METRIC',
-                'unit_distance': 'KILOMETERS',
-                'trips': []
-            }
-        }), 200
-    except Exception as e:
-        print(f"Error processing login: {str(e)}")
-        print(f"Request data: {request.data}")
-        return jsonify({'error': 'Bad request', 'message': str(e)}), 400
+        data = LoginSchema().load(json_data)
+    except ValidationError as err:
+        return jsonify({'errors': err.messages}), 400
+    app.logger.info(f"User login validated: {data}")
+    
+    # Mock successful login response
+    return jsonify({
+        'token': 'mock_token_for_testing',
+        'user': {
+            'id': 1,
+            'username': data.get('emailOrUsername', '').split('@')[0] if '@' in data.get('emailOrUsername', '') else data.get('emailOrUsername', ''),
+            'email': data.get('emailOrUsername', ''),
+            'created_at': '2025-04-14T09:00:00Z',
+            'updated_at': '2025-04-14T09:00:00Z',
+            'currency': {
+                'code': 'USD',
+                'name': 'United States Dollar',
+                'symbol': '$'
+            },
+            'unit_weight': 'METRIC',
+            'unit_distance': 'KILOMETERS',
+            'trips': []
+        }
+    }), 200
 
 @app.route('/user', methods=['GET'])
 def get_user():
@@ -879,7 +899,7 @@ def update_user():
     
     try:
         data = request.get_json()
-        print(f"Received user update: {data}")
+        app.logger.info(f"Received user update: {data}")
         
         # Update environment variables with API keys if provided
         if 'openai_api_key' in data and data['openai_api_key']:
@@ -935,7 +955,7 @@ def update_user():
             'trips': []
         }), 200
     except Exception as e:
-        print(f"Error updating user: {str(e)}")
+        app.logger.error(f"Error updating user: {e}")
         return jsonify({'error': 'Bad request', 'message': str(e)}), 400
 
 @app.route('/item/search', methods=['GET'])
@@ -979,7 +999,7 @@ def test_openai_connection():
             'message': 'No OpenAI API key is configured. Please add it in Settings.'
         })
     
-    print(f"Testing OpenAI API with key starting with: {api_key[:5]}...")
+    app.logger.debug("Testing OpenAI API connection")
     
     try:
         # Initialize a new client with the current key
@@ -1004,7 +1024,7 @@ def test_openai_connection():
             'response': response_text
         })
     except Exception as e:
-        print(f"OpenAI API test error: {str(e)}")
+        app.logger.error(f"OpenAI API test error: {e}")
         return jsonify({
             'success': False,
             'error': str(e),
