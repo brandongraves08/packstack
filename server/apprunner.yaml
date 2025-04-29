@@ -9,7 +9,7 @@ build:
       - pip3 install --no-cache-dir -r requirements.txt --target .
 run:
   runtime-version: "3.8"
-  command: python3 app.py
+  command: python app.py
   env:
     - name: FLASK_ENV
       value: production
