@@ -5,21 +5,14 @@ build:
     pre-build:
       - echo "Installing dependencies..."
       - pip install --upgrade pip
-      - pip install flask flask-cors Werkzeug openai python-dotenv requests Pillow gunicorn aws-xray-sdk watchtower
       - pip install -r requirements.txt
-      - pip freeze
 run:
-  runtime-version: 3.8
-  command: |
-    echo "Python version:"
-    python --version
-    echo "Installed packages:"
-    pip list | grep -i flask
-    python app.py
-  network:
-    port: 8080
+  runtime-version: "3.8"
+  command: python app.py
   env:
     - name: FLASK_ENV
-      value: "production"
+      value: production
     - name: PORT
       value: "8080"
+  network:
+    port: 8080
