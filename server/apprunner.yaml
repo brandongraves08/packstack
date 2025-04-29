@@ -3,12 +3,13 @@ runtime: python3
 build:
   commands:
     pre-build:
-      - echo "Installing dependencies..."
-      - pip install --upgrade pip
-      - pip install -r requirements.txt
+      - echo "Installing dependencies into code directory..."
+    build:
+      - pip3 install --upgrade pip
+      - pip3 install --no-cache-dir -r requirements.txt --target .
 run:
   runtime-version: "3.8"
-  command: python app.py
+  command: python3 app.py
   env:
     - name: FLASK_ENV
       value: production
