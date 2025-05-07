@@ -7,7 +7,8 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 type ExceptionOptions = {
-  onHttpError?: (error: AxiosError<{ detail: string }>) => void
+  onHttpError?: (error: AxiosError<{ detail: string; errors?: Record<string, string> }>) => void
+  onNetworkError?: () => void
   onUnknownError?: (error: Error | unknown) => void
 }
 
@@ -16,7 +17,13 @@ export const handleException = (
   options: ExceptionOptions
 ) => {
   if (isAxiosError(error)) {
-    options.onHttpError?.(error)
+    // Check if it's a network error
+    if (error.code === 'ERR_NETWORK' || !error.response) {
+      options.onNetworkError?.()
+    } else {
+      // It's an HTTP error with a response
+      options.onHttpError?.(error)
+    }
   } else {
     console.log(error)
     options.onUnknownError?.(error)

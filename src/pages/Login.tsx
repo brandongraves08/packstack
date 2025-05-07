@@ -7,6 +7,7 @@ import { Button, Input } from '@/components/ui'
 import { Mixpanel } from '@/lib/mixpanel'
 import { handleException } from '@/lib/utils'
 import { useUserLogin } from '@/queries/user'
+import { Alert, AlertDescription, AlertIcon } from '../components/ui/Alert'
 
 type LoginForm = {
   emailOrUsername: string
@@ -25,6 +26,9 @@ export const LoginPage = () => {
   }
 
   const onSubmit = (data: LoginForm) => {
+    // Clear previous errors
+    setError(undefined)
+    
     login.mutate(data, {
       onSuccess: ({ user }) => {
         Mixpanel.identify(`${user.id}`)
@@ -37,7 +41,24 @@ export const LoginPage = () => {
       },
       onError: error => {
         handleException(error, {
-          onHttpError: ({ response }) => setError(response?.data.detail),
+          onHttpError: ({ response }) => {
+            // Handle different error scenarios
+            if (response?.status === 400) {
+              setError(response?.data.detail || 'Invalid login credentials. Please check your email/username and password.')
+            } else if (response?.status === 401) {
+              setError('Authentication failed. Please check your credentials.')
+            } else if (response?.status === 429) {
+              setError('Too many login attempts. Please try again later.')
+            } else {
+              setError(response?.data.detail || 'An error occurred during login. Please try again.')
+            }
+          },
+          onNetworkError: () => {
+            setError('Network error. Please check your internet connection.')
+          },
+          onUnknownError: () => {
+            setError('An unexpected error occurred. Please try again later.')
+          }
         })
       },
     })
@@ -46,7 +67,12 @@ export const LoginPage = () => {
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <h1>Login</h1>
-      {error && <p className="text-red-300 text-xs my-1">{error}</p>}
+      {error && (
+        <Alert variant="destructive" className="my-2">
+          <AlertIcon variant="destructive" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
       <div className="my-2">
         <label>Email</label>
         <Input

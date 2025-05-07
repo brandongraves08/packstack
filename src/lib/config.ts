@@ -1,5 +1,11 @@
 // API configuration
-export const BASE_API_URL = 'http://localhost:5001' // Server API URL
+// Use a function to get the API URL to avoid initialization issues
+export function getApiUrl(): string {
+  return import.meta.env.VITE_API_URL || 'http://localhost:5001';
+}
+
+// For backward compatibility
+export const BASE_API_URL = getApiUrl();
 
 // Default settings
 export const DEFAULT_SETTINGS = {

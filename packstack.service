@@ -1,0 +1,17 @@
+[Unit]
+Description=Packstack Application
+After=network.target
+
+[Service]
+Type=forking
+User=ubuntu
+WorkingDirectory=/home/ubuntu/packstack
+ExecStart=/home/ubuntu/packstack/start.sh
+ExecStop=/home/ubuntu/packstack/stop.sh
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

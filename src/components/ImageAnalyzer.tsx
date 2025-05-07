@@ -11,7 +11,7 @@ import { Label } from './ui/Label'
 import { ScrollArea } from './ui/ScrollArea'
 
 // Use a relative path to the config
-const BASE_API_URL = 'http://localhost:5001'
+import { getApiUrl } from '../lib/api'
 
 interface ImageAnalyzerProps {
   open: boolean
@@ -86,7 +86,7 @@ export const ImageAnalyzer = ({
       formData.append('detect_barcodes', detectBarcodes.toString())
 
       // Call server-side image analysis endpoint
-      const response = await fetch(`${BASE_API_URL}/analyze`, {
+      const response = await fetch(`${getApiUrl()}/analyze`, {
         method: 'POST',
         body: formData,
       })
@@ -103,11 +103,11 @@ export const ImageAnalyzer = ({
           const items = Array.isArray(data.analysis)
             ? data.analysis
             : [data.analysis]
-          setAnalyzedItems(items.map(item => ({ ...item, selected: true })))
+          setAnalyzedItems(items.map((item: any) => ({ ...item, selected: true })))
           setAnalysis(JSON.stringify(data.analysis, null, 2))
         } else {
           // Single item mode
-          setAnalyzedItems([{ ...data.analysis, selected: true }])
+          setAnalyzedItems([{ ...(data.analysis as any), selected: true }])
           setAnalysis(JSON.stringify(data.analysis, null, 2))
         }
 

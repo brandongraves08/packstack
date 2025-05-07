@@ -1,9 +1,9 @@
 import axios from 'axios'
 
-import { BASE_API_URL } from './api'
+import { getApiUrl } from './api'
 
 export const http = axios.create({
-  baseURL: BASE_API_URL,
+  baseURL: getApiUrl(),
   timeout: 1000 * 60 * 2,
 })
 

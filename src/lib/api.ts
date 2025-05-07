@@ -26,25 +26,27 @@ import { User } from '@/types/user'
 import { http } from './base'
 
 // Define the base API URL for backend requests
-export const BASE_API_URL =
-  process.env.NODE_ENV === 'production'
-    ? process.env.REACT_APP_API_URL ||
-      (typeof window !== 'undefined' ? window.location.origin : '')
-    : 'http://localhost:5001'
+export function getApiUrl() {
+  // Use a safe approach to avoid initialization errors
+  return 'http://localhost:5001';
+}
+
+// For compatibility with existing code
+export const BASE_API_URL = getApiUrl();
 
 /**
  * User endpoints
  */
-export const getUser = () => http.get<User>(`${BASE_API_URL}/user`)
+export const getUser = () => http.get<User>(`${getApiUrl()}/user`)
 
 export const getProfile = (username: string) =>
-  http.get<User>(`${BASE_API_URL}/user/profile/${username}`)
+  http.get<User>(`${getApiUrl()}/user/profile/${username}`)
 
 export const uploadUserAvatar = (data: UploadAvatar) => {
   const formData = new FormData()
   formData.append('file', data.file)
 
-  return http.post<User>(`${BASE_API_URL}/user/avatar`, formData, {
+  return http.post<User>(`${getApiUrl()}/user/avatar`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -52,126 +54,126 @@ export const uploadUserAvatar = (data: UploadAvatar) => {
 }
 
 export const updateUser = (data: UpdateUser) =>
-  http.put<User>(`${BASE_API_URL}/user`, data)
+  http.put<User>(`${getApiUrl()}/user`, data)
 
 export const userLogin = (data: LoginRequest) =>
-  http.post<AuthResponse>(`${BASE_API_URL}/user/login`, data)
+  http.post<AuthResponse>(`${getApiUrl()}/user/login`, data)
 
 export const userRegister = (data: RegisterRequest) =>
-  http.post<AuthResponse>(`${BASE_API_URL}/user`, data)
+  http.post<AuthResponse>(`${getApiUrl()}/user`, data)
 
 export const requestPasswordReset = (email: string) =>
-  http.post(`${BASE_API_URL}/user/request-password-reset`, { email })
+  http.post(`${getApiUrl()}/user/request-password-reset`, { email })
 
 export const resetPassword = (data: PasswordReset) =>
-  http.post(`${BASE_API_URL}/user/reset-password`, data)
+  http.post(`${getApiUrl()}/user/reset-password`, data)
 
 /**
  * Trip endpoints
  */
 
 export const getTrip = (tripId?: string | number) =>
-  http.get<Trip>(`${BASE_API_URL}/trip/${tripId}`)
+  http.get<Trip>(`${getApiUrl()}/trip/${tripId}`)
 
 export const createTrip = (data: CreateTrip) =>
-  http.post<Trip>(`${BASE_API_URL}/trip`, data)
+  http.post<Trip>(`${getApiUrl()}/trip`, data)
 
 export const editTrip = (data: EditTrip) =>
-  http.put<Trip>(`${BASE_API_URL}/trip`, data)
+  http.put<Trip>(`${getApiUrl()}/trip`, data)
 
 export const cloneTrip = (tripId: number) =>
-  http.post<Trip>(`${BASE_API_URL}/trip/${tripId}/clone`)
+  http.post<Trip>(`${getApiUrl()}/trip/${tripId}/clone`)
 
 export const deleteTrip = (tripId: number) =>
-  http.delete<boolean>(`${BASE_API_URL}/trip/${tripId}`)
+  http.delete<boolean>(`${getApiUrl()}/trip/${tripId}`)
 
 /**
  * Pack endpoints
  */
 
 export const getPack = (id?: string | number) =>
-  http.get<Pack>(`${BASE_API_URL}/pack/${id}`)
+  http.get<Pack>(`${getApiUrl()}/pack/${id}`)
 
 export const getTripPacks = (tripId?: string | number) =>
-  http.get<Pack[]>(`${BASE_API_URL}/pack/trip/${tripId}`)
+  http.get<Pack[]>(`${getApiUrl()}/pack/trip/${tripId}`)
 
 export const createPack = (data: PackPayload) =>
-  http.post<Pack>(`${BASE_API_URL}/pack`, data)
+  http.post<Pack>(`${getApiUrl()}/pack`, data)
 
 export const updatePack = (packId: number, data: PackPayload) =>
-  http.put(`${BASE_API_URL}/pack/${packId}`, data)
+  http.put(`${getApiUrl()}/pack/${packId}`, data)
 
 export const deletePack = (packId: number) =>
-  http.delete(`${BASE_API_URL}/pack/${packId}`)
+  http.delete(`${getApiUrl()}/pack/${packId}`)
 
 export const generatePack = (packId: number) =>
-  http.post<Trip>(`${BASE_API_URL}/pack/${packId}/generate`)
+  http.post<Trip>(`${getApiUrl()}/pack/${packId}/generate`)
 
 export const getUnassignedPacks = () =>
-  http.get<Pack[]>(`${BASE_API_URL}/pack/legacy/unassigned`)
+  http.get<Pack[]>(`${getApiUrl()}/pack/legacy/unassigned`)
 
 /**
  * Category endpoints
  */
 
 export const getCategories = () =>
-  http.get<Category[]>(`${BASE_API_URL}/category`)
+  http.get<Category[]>(`${getApiUrl()}/category`)
 
 /**
  * Brand endpoints
  */
 
 export const getBrands = () =>
-  http.get<Brand[]>(`${BASE_API_URL}/resources/brands`)
+  http.get<Brand[]>(`${getApiUrl()}/resources/brands`)
 
 export const searchBrands = (query: string) =>
-  http.get<Brand[]>(`${BASE_API_URL}/resources/brand/search/${query}`)
+  http.get<Brand[]>(`${getApiUrl()}/resources/brand/search/${query}`)
 
 /**
  * Product endpoints
  */
 
 export const getProducts = (brandId?: number) =>
-  http.get<BrandProducts>(`${BASE_API_URL}/resources/brand/${brandId}`)
+  http.get<BrandProducts>(`${getApiUrl()}/resources/brand/${brandId}`)
 
 export const getProductDetails = (data: {
   brandId?: number
   productId?: number
 }) =>
-  http.post<ProductDetails>(`${BASE_API_URL}/resources/product-details`, data)
+  http.post<ProductDetails>(`${getApiUrl()}/resources/product-details`, data)
 
 export const getProductVariants = (product_id?: number) =>
   http.get<ProductVariant[]>(
-    `${BASE_API_URL}/resources/product/variants/${product_id}`
+    `${getApiUrl()}/resources/product/variants/${product_id}`
   )
 
 /**
  * Item endpoints
  */
 
-export const getInventory = () => http.get<Item[]>(`${BASE_API_URL}/items`)
+export const getInventory = () => http.get<Item[]>(`${getApiUrl()}/items`)
 
 export const createItem = (data: CreateItem) =>
-  http.post<Item>(`${BASE_API_URL}/item`, data)
+  http.post<Item>(`${getApiUrl()}/item`, data)
 
 export const deleteItem = (itemId: number) =>
-  http.delete(`${BASE_API_URL}/item/${itemId}`)
+  http.delete(`${getApiUrl()}/item/${itemId}`)
 
 export const updateItem = (data: EditItem) =>
-  http.put<Item>(`${BASE_API_URL}/item`, data)
+  http.put<Item>(`${getApiUrl()}/item`, data)
 
 export const updateItemSortOrder = (data: UpdateItemSortOrder) =>
-  http.put(`${BASE_API_URL}/item/sort`, data)
+  http.put(`${getApiUrl()}/item/sort`, data)
 
 export const updateCategorySortOrder = (data: UpdateItemSortOrder) =>
-  http.put(`${BASE_API_URL}/item/category/sort`, data)
+  http.put(`${getApiUrl()}/item/category/sort`, data)
 
 export const importInventory = (data: UploadInventory) => {
   const formData = new FormData()
   formData.append('file', data.file)
 
   return http.post<ImportInventoryResponse>(
-    `${BASE_API_URL}/item/import/csv`,
+    `${getApiUrl()}/item/import/csv`,
     formData,
     {
       headers: {
@@ -186,7 +188,7 @@ export const importLighterpack = (data: UploadInventory) => {
   formData.append('file', data.file)
 
   return http.post<ImportInventoryResponse>(
-    `${BASE_API_URL}/item/import/lighterpack`,
+    `${getApiUrl()}/item/import/lighterpack`,
     formData,
     {
       headers: {
@@ -201,7 +203,7 @@ export const importLighterpack = (data: UploadInventory) => {
  */
 export const searchItems = (query: string) =>
   http.get<Array<{ id: number; name: string; brand: string }>>(
-    `${BASE_API_URL}/item/search?query=${encodeURIComponent(query)}`
+    `${getApiUrl()}/item/search?query=${encodeURIComponent(query)}`
   )
 
 /**
@@ -218,7 +220,7 @@ export const getWeatherForecast = (location: string, season: string) =>
       alerts: string[]
     }
   }>(
-    `${BASE_API_URL}/weather-forecast?location=${encodeURIComponent(
+    `${getApiUrl()}/weather-forecast?location=${encodeURIComponent(
       location
     )}&season=${encodeURIComponent(season)}`
   )

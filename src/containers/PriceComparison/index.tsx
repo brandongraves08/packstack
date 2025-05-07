@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Loading } from '@/components/ui/Loading'
 
-import { BASE_API_URL } from '../../lib/config'
+import { getApiUrl } from '../../lib/config'
 
 interface ComparisonItem {
   title: string
@@ -35,7 +35,7 @@ const PriceComparison: React.FC = () => {
       params.append('keywords', keywords)
 
       const response = await fetch(
-        `${BASE_API_URL}/compare-prices?${params.toString()}`
+        `${getApiUrl()}/compare-prices?${params.toString()}`
       )
 
       if (!response.ok) {

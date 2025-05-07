@@ -6,19 +6,64 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+backend.log
+frontend.log
 
+# Dependencies
 node_modules
+/.pnp
+.pnp.js
+
+# Build and distribution
 dist
 dist-ssr
+build
+
+# Testing
+/coverage
+playwright-report
+test-results
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 *.local
+
+# Cache and temporary files
 .eslintcache
+.parcel-cache
+.cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Virtual environment
+venv/
+env/
+env.bak/
+venv.bak/
+.Python
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json.example
 .idea
 .DS_Store
 *.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Application specific
+server/uploads/*
+!server/uploads/.gitkeep
+.pids
 *.ntvs*
 *.njsproj
 *.sln

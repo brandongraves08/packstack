@@ -77,6 +77,12 @@ Last Updated: 2025-04-14
   - Documents all required environment variables for Flask backend
   - Ensures secure handling of secrets (never commit actual `.env`)
   - Reference for what to set in AWS App Runner environment variables
+- [x] Added WSL2 support for local development
+  - Created setup-wsl.sh script for easy WSL2 environment setup
+  - Created run-wsl.sh script for running both servers in WSL2
+  - Configured CORS to allow cross-platform access from Windows host
+  - Added .env.wsl configuration template for WSL2 environment
+  - Updated README.md with comprehensive WSL2 setup instructions
 
 ### In Progress
 - [ ] Testing the enhanced image analysis functionality
@@ -110,6 +116,20 @@ Last Updated: 2025-04-14
 7. User authentication - login and registration functionality
    - **Fixed**: Requires both frontend and backend servers to be running (frontend: 5173, backend: 5001)
    - **Note**: Backend provides mock authentication endpoints for testing
+8. Frontend-Backend authentication data format mismatch
+   - **Fixed**: Improved backend error handling and validation to provide clearer error messages
+   - **Details**: Enhanced login and registration endpoints with better error responses and data validation
+9. Multiple API URL configuration definitions causing initialization errors
+   - **Fixed**: Consolidated API URL configuration to a single source with proper initialization
+   - **Details**: All components now directly use getApiUrl() instead of BASE_API_URL constants
+10. ImageAnalyzer component has TypeScript type issues
+    - **Fixed**: Added explicit TypeScript type annotations to resolve 'implicit any' type warnings
+    - **Details**: Used proper type annotations for API response data in the map functions
+11. Error handling in authentication components could be improved
+    - **Fixed**: Enhanced error handling with detailed user feedback for various error scenarios
+    - **Details**: Added Alert components for better UX and specific error messaging
+12. Component rendering before API URL initialization
+    - **Fixed**: Implemented proper loading states and defensive API URL handling
 
 ### Known Issues
 1. Need to add server startup script to ensure the Flask server is running before using image analysis
@@ -199,6 +219,10 @@ Last Updated: 2025-04-14
 - [x] Configure AWS App Runner deployment with GitHub integration
 - [x] Optimize production deployment with direct Flask execution and comprehensive diagnostic logging
 - [x] Implement AWS X-Ray tracing and CloudWatch logging
+- [x] Add WSL2 support for improved cross-platform development
+  - Configured Vite server to handle WSL2-specific networking
+  - Created helper scripts for streamlined WSL2 setup and execution
+  - Added CORS configuration for Windows-WSL2 communication
 - [x] Create enhanced health check endpoint for monitoring
 - [ ] Implement automated testing in CI/CD pipeline
 - [ ] Add performance monitoring dashboard in CloudWatch

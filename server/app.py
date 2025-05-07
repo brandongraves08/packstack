@@ -796,32 +796,50 @@ def register_user():
         return '', 204
         
     # Handle POST request for registration
-    json_data = request.get_json(force=True)
     try:
-        data = RegisterSchema().load(json_data)
-    except ValidationError as err:
-        return jsonify({'errors': err.messages}), 400
-    app.logger.info(f"User registration validated: {data}")
-    
-    # Mock successful registration response
-    return jsonify({
-        'token': 'mock_token_for_testing',
-        'user': {
-            'id': 1,
-            'username': data.get('username', ''),
-            'email': data.get('email', ''),
-            'created_at': '2025-04-14T09:00:00Z',
-            'updated_at': '2025-04-14T09:00:00Z',
-            'currency': {
-                'code': 'USD',
-                'name': 'United States Dollar',
-                'symbol': '$'
-            },
-            'unit_weight': 'METRIC',
-            'unit_distance': 'KILOMETERS',
-            'trips': []
-        }
-    }), 201
+        json_data = request.get_json(force=True)
+        app.logger.info(f"Registration request received: {json_data}")
+        
+        # Validate with more detailed error handling
+        try:
+            data = RegisterSchema().load(json_data)
+        except ValidationError as err:
+            # Provide more detailed error messages
+            app.logger.warning(f"Registration validation error: {err.messages}")
+            return jsonify({
+                'success': False,
+                'detail': 'Invalid registration data',
+                'errors': err.messages
+            }), 400
+            
+        app.logger.info(f"User registration validated: {data}")
+        
+        # Mock successful registration response
+        return jsonify({
+            'token': 'mock_token_for_testing',
+            'user': {
+                'id': 1,
+                'username': data.get('username', ''),
+                'email': data.get('email', ''),
+                'created_at': '2025-04-14T09:00:00Z',
+                'updated_at': '2025-04-14T09:00:00Z',
+                'currency': {
+                    'code': 'USD',
+                    'name': 'United States Dollar',
+                    'symbol': '$'
+                },
+                'unit_weight': 'METRIC',
+                'unit_distance': 'KILOMETERS',
+                'trips': []
+            }
+        }), 201
+    except Exception as e:
+        app.logger.error(f"Unexpected error in registration: {str(e)}")
+        return jsonify({
+            'success': False,
+            'detail': 'Server error processing registration',
+            'message': str(e)
+        }), 500
 
 @app.route('/user/login', methods=['OPTIONS', 'POST'])
 def login_user():
@@ -831,20 +849,79 @@ def login_user():
         return '', 204
         
     # Handle POST request for login
-    json_data = request.get_json(force=True)
     try:
-        data = LoginSchema().load(json_data)
-    except ValidationError as err:
-        return jsonify({'errors': err.messages}), 400
-    app.logger.info(f"User login validated: {data}")
-    
-    # Mock successful login response
-    return jsonify({
-        'token': 'mock_token_for_testing',
-        'user': {
+        json_data = request.get_json(force=True)
+        app.logger.info(f"Login request received: {json_data}")
+        
+        # Validate with more detailed error handling
+        try:
+            data = LoginSchema().load(json_data)
+        except ValidationError as err:
+            # Provide more detailed error messages
+            app.logger.warning(f"Login validation error: {err.messages}")
+            return jsonify({
+                'success': False,
+                'detail': 'Invalid login credentials',
+                'errors': err.messages
+            }), 400
+        
+        app.logger.info(f"User login validated: {data}")
+        
+        # Extract the username from emailOrUsername
+        username = data.get('emailOrUsername', '')
+        if '@' in username:
+            username = username.split('@')[0]
+        
+        # Mock successful login response
+        return jsonify({
+            'token': 'mock_token_for_testing',
+            'user': {
+                'id': 1,
+                'username': username,
+                'email': data.get('emailOrUsername', ''),
+                'created_at': '2025-04-14T09:00:00Z',
+                'updated_at': '2025-04-14T09:00:00Z',
+                'currency': {
+                    'code': 'USD',
+                    'name': 'United States Dollar',
+                    'symbol': '$'
+                },
+                'unit_weight': 'METRIC',
+                'unit_distance': 'KILOMETERS',
+                'trips': []
+            }
+        }), 200
+    except Exception as e:
+        app.logger.error(f"Unexpected error in login: {str(e)}")
+        return jsonify({
+            'success': False,
+            'detail': 'Server error processing login',
+            'message': str(e)
+        }), 500
+
+@app.route('/user', methods=['GET'])
+def get_user():
+    """Mock endpoint to get the current user's data"""
+    try:
+        # Check for auth token
+        auth_header = request.headers.get('Authorization', '')
+        app.logger.info(f"Get user request received with auth: {auth_header[:10]}...")
+        
+        if not auth_header.startswith('Bearer '):
+            app.logger.warning("Unauthorized access attempt - missing or invalid Bearer token")
+            return jsonify({
+                'success': False,
+                'detail': 'Authentication required. Please login.'
+            }), 401
+        
+        # In a real implementation, you would validate the token here
+        # For mock purposes, we'll just return the data
+        
+        # Mock user data
+        return jsonify({
             'id': 1,
-            'username': data.get('emailOrUsername', '').split('@')[0] if '@' in data.get('emailOrUsername', '') else data.get('emailOrUsername', ''),
-            'email': data.get('emailOrUsername', ''),
+            'username': 'testuser',
+            'email': 'test@example.com',
             'created_at': '2025-04-14T09:00:00Z',
             'updated_at': '2025-04-14T09:00:00Z',
             'currency': {
@@ -854,40 +931,21 @@ def login_user():
             },
             'unit_weight': 'METRIC',
             'unit_distance': 'KILOMETERS',
+            'openai_api_key': os.getenv('OPENAI_API_KEY', ''),
+            'amazon_access_key': os.getenv('AWS_ACCESS_KEY_ID', ''),
+            'amazon_secret_key': os.getenv('AWS_SECRET_KEY', ''),
+            'amazon_associate_tag': os.getenv('AWS_ASSOCIATE_TAG', ''),
+            'walmart_client_id': os.getenv('WALMART_CLIENT_ID', ''),
+            'walmart_client_secret': os.getenv('WALMART_CLIENT_SECRET', ''),
             'trips': []
-        }
-    }), 200
-
-@app.route('/user', methods=['GET'])
-def get_user():
-    """Mock endpoint to get the current user's data"""
-    # Check for auth token
-    auth_header = request.headers.get('Authorization', '')
-    if not auth_header.startswith('Bearer '):
-        return jsonify({'error': 'Unauthorized'}), 401
-    
-    # Mock user data
-    return jsonify({
-        'id': 1,
-        'username': 'testuser',
-        'email': 'test@example.com',
-        'created_at': '2025-04-14T09:00:00Z',
-        'updated_at': '2025-04-14T09:00:00Z',
-        'currency': {
-            'code': 'USD',
-            'name': 'United States Dollar',
-            'symbol': '$'
-        },
-        'unit_weight': 'METRIC',
-        'unit_distance': 'KILOMETERS',
-        'openai_api_key': os.getenv('OPENAI_API_KEY', ''),
-        'amazon_access_key': os.getenv('AWS_ACCESS_KEY_ID', ''),
-        'amazon_secret_key': os.getenv('AWS_SECRET_KEY', ''),
-        'amazon_associate_tag': os.getenv('AWS_ASSOCIATE_TAG', ''),
-        'walmart_client_id': os.getenv('WALMART_CLIENT_ID', ''),
-        'walmart_client_secret': os.getenv('WALMART_CLIENT_SECRET', ''),
-        'trips': []
-    }), 200
+        }), 200
+    except Exception as e:
+        app.logger.error(f"Unexpected error in get_user: {str(e)}")
+        return jsonify({
+            'success': False,
+            'detail': 'Server error retrieving user data',
+            'message': str(e)
+        }), 500
 
 @app.route('/user', methods=['PUT'])
 def update_user():

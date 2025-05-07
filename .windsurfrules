@@ -1,1 +1,11 @@
-keep the futurefeatures.md file up to date with all new features and updates and pending bug fixes.
+keep the futurefeatures.md file up to date with all future improvements and pending bug fixes. If futurefeatures.md does not exsist create it.
+Create and keep a ReadMe.MD file up to date with all project information and instructions for end users to use.
+Create and keep a .gitignore file up to date with all project files and folders to be ignored by git.
+Create and keep a .env.example file up to date with all project environment variables.
+Create and keep a .windsurfrules file up to date with all project rules and instructions for end users to use.
+Create and keep a .huskyrc.json file up to date with all project husky configuration.
+Create and keep a .prettierrc.json file up to date with all project prettier configuration.
+Create and keep a .eslintrc.json file up to date with all project eslint configuration.
+Create and keep a .lintstagedrc.json file up to date with all project lint-staged configuration.
+Create and keep a .sentryclirc file up to date with all project sentry configuration.
+Create and keep a .env file up to date with all project environment variables.

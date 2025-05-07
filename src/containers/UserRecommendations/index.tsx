@@ -9,7 +9,7 @@ import { ScrollArea } from '@/components/ui/ScrollArea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import { useWeatherForecast } from '@/queries/weather'
 
-import { BASE_API_URL } from '../../lib/config'
+import { getApiUrl } from '../../lib/config'
 
 interface UserProfile {
   experience_level: string
@@ -90,7 +90,7 @@ const UserRecommendations: React.FC = () => {
 
   const { mutate, data, isPending, isError, error } = useMutation({
     mutationFn: async () => {
-      const response = await fetch(`${BASE_API_URL}/user-recommendations`, {
+      const response = await fetch(`${getApiUrl()}/user-recommendations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,4 +1,4 @@
-import { BASE_API_URL } from './config'
+import { getApiUrl } from './config'
 
 export interface WalmartProduct {
   asin: string
@@ -65,7 +65,7 @@ const walmartApi = {
       params.append('max_results', maxResults.toString())
 
       const response = await fetch(
-        `${BASE_API_URL}/walmart/search?${params.toString()}`
+        `${getApiUrl()}/walmart/search?${params.toString()}`
       )
 
       if (!response.ok) {
@@ -94,7 +94,7 @@ const walmartApi = {
     itemId: string
   ): Promise<WalmartProductDetailResponse> => {
     try {
-      const response = await fetch(`${BASE_API_URL}/walmart/product/${itemId}`)
+      const response = await fetch(`${getApiUrl()}/walmart/product/${itemId}`)
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -126,7 +126,7 @@ const walmartApi = {
       params.append('zip_code', zipCode)
 
       const response = await fetch(
-        `${BASE_API_URL}/walmart/store-availability/${itemId}?${params.toString()}`
+        `${getApiUrl()}/walmart/store-availability/${itemId}?${params.toString()}`
       )
 
       if (!response.ok) {

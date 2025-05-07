@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Button, Input } from '@/components/ui'
 import { handleException } from '@/lib/utils'
 import { useUserRegister } from '@/queries/user'
+import { Alert, AlertDescription, AlertIcon } from '../components/ui/Alert'
 
 type RegisterForm = {
   username: string
@@ -48,12 +49,39 @@ export const RegisterPage = () => {
   }
 
   const onSubmit = (data: RegisterForm) => {
+    // Clear previous errors
     setError(undefined)
+    
     signUp.mutate(data, {
       onSuccess: () => navigate('/'),
       onError: error => {
         handleException(error, {
-          onHttpError: ({ response }) => setError(response?.data.detail),
+          onHttpError: ({ response }) => {
+            // Handle different error scenarios
+            if (response?.status === 400) {
+              const detail = response?.data.detail || 'Invalid registration data';
+              const errors = response?.data.errors || {};
+              
+              // Check for specific validation errors
+              if (errors.username) {
+                setError(`Username error: ${errors.username}`);
+              } else if (errors.email) {
+                setError(`Email error: ${errors.email}`);
+              } else if (errors.password) {
+                setError(`Password error: ${errors.password}`);
+              } else {
+                setError(detail);
+              }
+            } else {
+              setError(response?.data.detail || 'An error occurred during registration. Please try again.');
+            }
+          },
+          onNetworkError: () => {
+            setError('Network error. Please check your internet connection.');
+          },
+          onUnknownError: () => {
+            setError('An unexpected error occurred. Please try again later.');
+          }
         })
       },
     })
@@ -62,7 +90,12 @@ export const RegisterPage = () => {
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <h1>Sign Up</h1>
-      {error && <p className="text-red-300 text-xs my-1">{error}</p>}
+      {error && (
+        <Alert variant="destructive" className="my-2">
+          <AlertIcon variant="destructive" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
       <div className="my-2">
         <label>Username</label>
         <Input
